@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🧠 MyAgent v4.1 — Balisage Propre</title>
+    <title>🧠 MyAgent v5.2 — CSS Protégé</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-[#0d1117] text-gray-200 font-sans antialiased min-h-screen flex items-center justify-center p-4">
 
-    <main class="w-full max-w-4xl bg-[#161b22] border border-[#30363d] rounded-2xl shadow-2xl p-4 md:p-6 space-y-4">
+    <main class="w-full max-w-5xl bg-[#161b22] border border-[#30363d] rounded-2xl shadow-2xl p-4 md:p-6 space-y-4">
 
         <!-- En-tête -->
         <header class="flex items-center justify-between border-b border-[#30363d] pb-3">
             <div class="flex items-center gap-2">
                 <span class="text-2xl">🧠</span>
-                <h1 class="text-xl font-bold text-[#58a6ff]">MyAgent v4.1</h1>
-                <span class="text-xs bg-[#f0883e] text-white px-2 py-0.5 rounded-full">⚡ Balisage Propre</span>
+                <h1 class="text-xl font-bold text-[#58a6ff]">MyAgent v5.2</h1>
+                <span class="text-xs bg-[#f0883e] text-white px-2 py-0.5 rounded-full">⚡ CSS Protégé</span>
             </div>
             <div class="text-xs text-gray-500">🔒 localStorage</div>
         </header>
@@ -42,13 +42,13 @@
             <div class="flex items-center justify-between">
                 <label class="text-sm font-medium text-gray-300">📄 Code Source</label>
                 <div class="flex gap-2">
-                    <button id="autoTagBtn" class="text-xs bg-[#f0883e] hover:bg-[#f0a83e] text-white px-3 py-1 rounded-lg transition">🏷️ Baliser Propre</button>
-                    <button id="cleanTagsBtn" class="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-1 rounded-lg transition">🧹 Nettoyer Balises</button>
+                    <button id="autoTagBtn" class="text-xs bg-[#f0883e] hover:bg-[#f0a83e] text-white px-2 py-1 rounded-lg transition">🏷️ Baliser (CSS safe)</button>
+                    <button id="fixCssBtn" class="text-xs bg-[#1f6feb] hover:bg-[#388bfd] text-white px-2 py-1 rounded-lg transition">🔧 Réparer CSS</button>
                     <button id="loadExampleBtn" class="text-xs bg-[#1f6feb] hover:bg-[#388bfd] px-2 py-1 rounded-lg">📥 Exemple</button>
                     <button id="resetCodeBtn" class="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-1 rounded-lg">🗑️</button>
                 </div>
             </div>
-            <textarea id="fullCodeInput" rows="8" placeholder="Colle ton code ici, MyAgent va le baliser proprement !"
+            <textarea id="fullCodeInput" rows="6" placeholder="Colle ton code ici..."
             class="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 font-mono resize-y"></textarea>
             <div class="flex justify-between text-xs text-gray-500">
                 <span id="codeStats">📊 0 sections</span>
@@ -56,11 +56,22 @@
             </div>
         </section>
 
-        <!-- Instructions + Envoi -->
-        <section class="flex gap-2">
-            <input type="text" id="instructionsInput" placeholder="📝 Instructions..."
-            class="flex-1 bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm" />
-            <button id="sendBtn" class="bg-[#238636] hover:bg-[#2ea043] text-white px-4 py-2 rounded-lg text-sm transition disabled:opacity-50">🚀 Patcher</button>
+        <!-- Instructions + Batch -->
+        <section class="space-y-2">
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-300">📝 Instructions</label>
+                <button id="toggleBatchBtn" class="text-xs bg-[#1f6feb] hover:bg-[#388bfd] text-white px-2 py-0.5 rounded-lg transition">📋 Mode batch</button>
+            </div>
+            <div class="flex gap-2">
+                <input type="text" id="instructionsInput" placeholder="Une instruction simple..."
+                class="flex-1 bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm" />
+                <button id="sendBtn" class="bg-[#238636] hover:bg-[#2ea043] text-white px-4 py-2 rounded-lg text-sm transition disabled:opacity-50">🚀 Patcher</button>
+            </div>
+            <div id="batchContainer" class="hidden">
+                <textarea id="batchInput" rows="4" placeholder="Écris une instruction par ligne&#10;Ex:&#10;Change la couleur du canvas en rouge&#10;Ajoute un bouton de zoom&#10;Rends le texte plus gros"
+                class="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 font-mono resize-y"></textarea>
+                <button id="batchSendBtn" class="w-full bg-[#1f6feb] hover:bg-[#388bfd] text-white px-4 py-2 rounded-lg text-sm transition mt-1">🚀 Exécuter le batch</button>
+            </div>
         </section>
 
         <!-- Patches détectés -->
@@ -74,19 +85,29 @@
             </div>
         </section>
 
-        <!-- Code final -->
+        <!-- Code final + Historique -->
         <section class="border-t border-[#30363d] pt-3">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-sm font-medium text-gray-300">📦 Code Final</span>
                 <div class="flex gap-2">
                     <button id="copyFinalBtn" class="text-xs bg-[#1f6feb] hover:bg-[#388bfd] text-white px-2 py-1 rounded-lg">📋</button>
                     <button id="exportFinalBtn" class="text-xs bg-[#238636] hover:bg-[#2ea043] text-white px-2 py-1 rounded-lg">⬇️</button>
+                    <button id="showHistoryBtn" class="text-xs bg-[#f0883e] hover:bg-[#f0a83e] text-white px-2 py-1 rounded-lg">📜 Historique</button>
                 </div>
             </div>
             <div id="finalCodeDisplay"
             class="bg-[#0d1117] border border-[#30363d] rounded-lg p-3 min-h-[80px] text-sm text-gray-300 whitespace-pre-wrap font-mono overflow-auto max-h-48">
             ⏳ Aucun code
         </div>
+    </section>
+
+    <!-- Sandbox en temps réel -->
+    <section class="border-t border-[#30363d] pt-3">
+        <div class="flex items-center justify-between mb-1">
+            <span class="text-sm font-medium text-gray-300">🏖️ Aperçu en direct</span>
+            <button id="refreshSandboxBtn" class="text-xs bg-[#1f6feb] hover:bg-[#388bfd] text-white px-2 py-1 rounded-lg">↻ Rafraîchir</button>
+        </div>
+        <iframe id="sandboxIframe" class="w-full bg-white rounded-lg border border-[#30363d]" style="height: 300px; resize: vertical; min-height: 200px;"></iframe>
     </section>
 
     <!-- Console -->
@@ -99,15 +120,15 @@
             </div>
         </div>
         <div id="consoleOutput"
-        class="bg-[#0a0a0c] border border-[#30363d] rounded-lg p-2 min-h-[100px] max-h-[200px] overflow-auto font-mono text-xs text-gray-400 whitespace-pre-wrap">
+        class="bg-[#0a0a0c] border border-[#30363d] rounded-lg p-2 min-h-[80px] max-h-[150px] overflow-auto font-mono text-xs text-gray-400 whitespace-pre-wrap">
         ⏳ Console prête...
     </div>
 </section>
 
 <!-- Footer -->
 <footer class="text-xs text-gray-600 border-t border-[#30363d] pt-2 flex justify-between">
-    <span>🧠 MyAgent v4.1 · Balisage Propre</span>
-    <span>⚡ cache automatique · mapping intelligent</span>
+    <span>🧠 MyAgent v5.2 · CSS Protégé</span>
+    <span>⚡ cache automatique</span>
 </footer>
 </main>
 
@@ -124,31 +145,38 @@
         const fullCodeInput = $('fullCodeInput');
         const instructionsInput = $('instructionsInput');
         const sendBtn = $('sendBtn');
+        const batchContainer = $('batchContainer');
+        const batchInput = $('batchInput');
+        const batchSendBtn = $('batchSendBtn');
+        const toggleBatchBtn = $('toggleBatchBtn');
         const patchesContainer = $('patchesContainer');
         const patchTimestamp = $('patchTimestamp');
         const finalCodeDisplay = $('finalCodeDisplay');
         const copyFinalBtn = $('copyFinalBtn');
         const exportFinalBtn = $('exportFinalBtn');
+        const showHistoryBtn = $('showHistoryBtn');
         const codeStats = $('codeStats');
         const tagStatus = $('tagStatus');
         const loadExampleBtn = $('loadExampleBtn');
         const resetCodeBtn = $('resetCodeBtn');
         const autoTagBtn = $('autoTagBtn');
-        const cleanTagsBtn = $('cleanTagsBtn');
+        const fixCssBtn = $('fixCssBtn');
         const consoleOutput = $('consoleOutput');
         const clearConsoleBtn = $('clearConsoleBtn');
         const copyConsoleBtn = $('copyConsoleBtn');
+        const sandboxIframe = $('sandboxIframe');
+        const refreshSandboxBtn = $('refreshSandboxBtn');
+
+        // === ÉTAT ===
+        let fullCode = localStorage.getItem('myagent_full_code') || '';
+        let sectionMapping = JSON.parse(localStorage.getItem('myagent_section_mapping') || '{}');
+        let patchHistory = JSON.parse(localStorage.getItem('myagent_patch_history') || '[]');
+        let currentPatchesData = null;
+        let isBatchMode = false;
 
         // === CONSOLE ===
         function log(message, type = 'info') {
-            const prefix = {
-                info: 'ℹ️',
-                success: '✅',
-                error: '❌',
-                warning: '⚠️',
-                debug: '🔍',
-                tag: '🏷️'
-            };
+            const prefix = { info: 'ℹ️', success: '✅', error: '❌', warning: '⚠️', debug: '🔍', tag: '🏷️' };
             const timestamp = new Date().toLocaleTimeString();
             const line = `[${timestamp}] ${prefix[type] || '•'} ${message}`;
             consoleOutput.textContent += (consoleOutput.textContent ? '\n' : '') + line;
@@ -156,10 +184,7 @@
             console.log(`[MyAgent] ${message}`);
         }
 
-        function clearConsole() {
-            consoleOutput.textContent = '🧹 Console vidée';
-        }
-
+        function clearConsole() { consoleOutput.textContent = '🧹 Console vidée'; }
         function copyConsole() {
             navigator.clipboard.writeText(consoleOutput.textContent).then(() => {
                 const orig = copyConsoleBtn.textContent;
@@ -167,14 +192,8 @@
                 setTimeout(() => copyConsoleBtn.textContent = orig, 1500);
             });
         }
-
         clearConsoleBtn.addEventListener('click', clearConsole);
         copyConsoleBtn.addEventListener('click', copyConsole);
-
-        // === ÉTAT ===
-        let fullCode = localStorage.getItem('myagent_full_code') || '';
-        let sectionMapping = JSON.parse(localStorage.getItem('myagent_section_mapping') || '{}');
-        let currentPatchesData = null;
 
         // === CHARGEMENT ===
         function loadFullCode() {
@@ -188,14 +207,11 @@
                 if (hasTags(fullCode)) {
                     tagStatus.textContent = '✅ Balisé';
                     tagStatus.className = 'text-xs text-green-400';
-                    log('Code déjà balisé', 'success');
                 } else {
                     tagStatus.textContent = '⚪ Non balisé';
                     tagStatus.className = 'text-xs text-gray-400';
-                    log('Code non balisé. Clique sur "Baliser Propre"', 'warning');
                 }
-            } else {
-                log('Aucun code source sauvegardé', 'info');
+                updateSandbox();
             }
         }
 
@@ -203,6 +219,8 @@
             finalCodeDisplay.textContent = fullCode || '⏳ Aucun code source.';
             localStorage.setItem('myagent_full_code', fullCode);
             localStorage.setItem('myagent_section_mapping', JSON.stringify(sectionMapping));
+            localStorage.setItem('myagent_patch_history', JSON.stringify(patchHistory));
+            updateSandbox();
         }
 
         function updateCodeStats() {
@@ -210,139 +228,256 @@
             codeStats.textContent = `📊 ${sections.length} sections`;
         }
 
-        // === DÉTECTION DE BALISES ===
-        function hasTags(code) {
-            return /\/\/\s*==SECTION:/.test(code);
-        }
+        function hasTags(code) { return /\/\/\s*==SECTION:/.test(code); }
 
-        // === EXTRACTION DES SECTIONS ===
         function extractSections(code) {
             const regex = /\/\/\s*==SECTION:\s*([^\n]+)==\s*([\s\S]*?)\s*\/\/\s*==END==/g;
             const sections = [];
             let match;
             while ((match = regex.exec(code)) !== null) {
-                sections.push({
-                    name: match[1].trim(),
-                    content: match[2].trim(),
-                    fullMatch: match[0]
-                });
+                sections.push({ name: match[1].trim(), content: match[2].trim(), fullMatch: match[0] });
             }
             return sections;
         }
 
-        // === BALISAGE PROPRE V4.1 ===
-        function autoTagCodePropre(code) {
-            log('🏷️ Balisage propre en cours...', 'tag');
+        // === SANDBOX ===
+        function updateSandbox() {
+            try {
+                const htmlContent = fullCode || '<html><body><p>⏳ Aucun code à afficher</p></body></html>';
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                sandboxIframe.src = url;
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                log('🏖️ Sandbox mis à jour', 'success');
+            } catch (e) {
+                log(`❌ Erreur sandbox : ${e.message}`, 'error');
+            }
+        }
 
-            let result = code;
-            const detected = [];
+        refreshSandboxBtn.addEventListener('click', updateSandbox);
 
-            // 1. Détecter les composants React : const Nom = () => { ... }
-            const componentRegex = /const\s+([A-Z][a-zA-Z0-9_]*)\s*=\s*(?:\(\)\s*=>\s*{([\s\S]*?)}|\([^)]*\)\s*=>\s*{([\s\S]*?)})/g;
+        // === HISTORIQUE ===
+        function addToHistory(patch, instruction) {
+            const entry = {
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                section: patch.section,
+                oldContent: patch.oldContent || '',
+                newContent: patch.newContent,
+                instruction: instruction,
+                fullCode: fullCode
+            };
+            patchHistory.push(entry);
+            if (patchHistory.length > 50) patchHistory.shift();
+            localStorage.setItem('myagent_patch_history', JSON.stringify(patchHistory));
+            log(`💾 Patch sauvegardé dans l'historique (${patchHistory.length})`, 'success');
+        }
+
+        function showHistory() {
+            if (patchHistory.length === 0) {
+                alert('📜 Aucun historique pour le moment.');
+                return;
+            }
+            let msg = '📜 HISTORIQUE DES PATCHS\n' + '═'.repeat(40) + '\n';
+            patchHistory.slice().reverse().forEach((entry, i) => {
+                const date = new Date(entry.timestamp).toLocaleString();
+                msg += `[${i+1}] ${date}\n`;
+                msg += `📌 Section: ${entry.section}\n`;
+                msg += `📝 Instruction: ${entry.instruction || 'N/A'}\n`;
+                msg += `🔄 Contenu: ${(entry.newContent || '').substring(0, 60)}...\n`;
+                msg += '─'.repeat(40) + '\n';
+            });
+            alert(msg);
+        }
+
+        showHistoryBtn.addEventListener('click', showHistory);
+
+        // === APPLICATION D'UN PATCH ===
+        function applyPatch(patch, instruction = '') {
+            const { section, newContent } = patch;
+            log(`Application du patch sur "${section}"...`, 'debug');
+
+            let oldContent = '';
+            const regex = new RegExp(`(\/\/\\s*==SECTION:\\s*${escapeRegex(section)}==)[\\s\\S]*?(\/\/\\s*==END==)`, 'g');
+            const match = regex.exec(fullCode);
+            if (match) oldContent = match[0];
+
+            if (newContent === null || newContent === 'null') {
+                fullCode = fullCode.replace(regex, '');
+                log(`Section "${section}" supprimée`, 'success');
+                fullCodeInput.value = fullCode;
+                updateFinalCodeDisplay();
+                updateCodeStats();
+                finalCodeDisplay.textContent = fullCode;
+                delete sectionMapping[section];
+                localStorage.setItem('myagent_section_mapping', JSON.stringify(sectionMapping));
+                addToHistory({ section, newContent: null, oldContent }, instruction);
+                return true;
+            }
+
+            let cleanContent = newContent;
+            cleanContent = cleanContent.replace(/^```(?:jsx|javascript|html)?\s*/i, '');
+            cleanContent = cleanContent.replace(/\s*```$/, '');
+            cleanContent = cleanContent.trim();
+
+            if (match) {
+                const newSection = `// ==SECTION: ${section}==\n${cleanContent}\n// ==END==`;
+                fullCode = fullCode.replace(match[0], newSection);
+                log(`Section "${section}" mise à jour`, 'success');
+            } else {
+                const newSection = `\n// ==SECTION: ${section}==\n${cleanContent}\n// ==END==`;
+                fullCode += newSection;
+                log(`Section "${section}" créée`, 'success');
+                sectionMapping[section] = { originalName: section, type: 'patch-created', timestamp: new Date().toISOString() };
+                localStorage.setItem('myagent_section_mapping', JSON.stringify(sectionMapping));
+            }
+
+            fullCodeInput.value = fullCode;
+            updateFinalCodeDisplay();
+            updateCodeStats();
+            finalCodeDisplay.textContent = fullCode;
+            addToHistory({ section, newContent: cleanContent, oldContent }, instruction);
+            updateSandbox();
+            return true;
+        }
+
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // === RÉPARER LE CSS (supprime les balises dans les blocs <style>) ===
+        function fixCssInCode(code) {
+            // Trouver tous les blocs <style>
+            const styleRegex = /<style[\s\S]*?<\/style>/g;
+            let fixed = code;
             let match;
+            while ((match = styleRegex.exec(code)) !== null) {
+                const styleBlock = match[0];
+                // Nettoyer les balises SECTION/END à l'intérieur du bloc
+                const cleanStyle = styleBlock
+                    .replace(/\/\/\s*==SECTION:.*==\n?/g, '')
+                    .replace(/\/\/\s*==END==\n?/g, '');
+                fixed = fixed.replace(styleBlock, cleanStyle);
+            }
+            // Nettoyer les balises orphelines en dehors des blocs (optionnel)
+            // fixed = fixed.replace(/\/\/\s*==SECTION:.*==\n?/g, '');
+            // fixed = fixed.replace(/\/\/\s*==END==\n?/g, '');
+            return fixed;
+        }
+
+        function applyFixCss() {
+            const code = fullCodeInput.value.trim();
+            if (!code) { alert('📄 Colle du code d\'abord.'); return; }
+            const fixed = fixCssInCode(code);
+            fullCode = fixed;
+            fullCodeInput.value = fixed;
+            updateFinalCodeDisplay();
+            updateCodeStats();
+            log('🔧 CSS réparé (balises supprimées)', 'success');
+            patchesContainer.innerHTML = '<div class="text-gray-500 italic">🔧 CSS réparé. Vérifie le rendu dans le sandbox.</div>';
+            updateSandbox();
+        }
+
+        // === BALISAGE CSS-SAFE ===
+        function autoTagCodePropre(code) {
+            log('🏷️ Balisage CSS-safe...', 'tag');
+
+            // Étape 1 : Protéger les blocs <style> et <script> avec des placeholders
+            const styleRegex = /<style[\s\S]*?<\/style>/g;
+            const scriptRegex = /<script(?![^>]*type="text\/babel")[\s\S]*?<\/script>/g;
+
+            const protectedBlocks = [];
+            let tempCode = code;
+
+            // Protéger les blocs <style>
+            let match;
+            while ((match = styleRegex.exec(tempCode)) !== null) {
+                const placeholder = `__PROTECTED_STYLE_${protectedBlocks.length}__`;
+                protectedBlocks.push({ type: 'style', content: match[0], placeholder });
+                tempCode = tempCode.replace(match[0], placeholder);
+            }
+
+            // Protéger les blocs <script>
+            while ((match = scriptRegex.exec(tempCode)) !== null) {
+                const placeholder = `__PROTECTED_SCRIPT_${protectedBlocks.length}__`;
+                protectedBlocks.push({ type: 'script', content: match[0], placeholder });
+                tempCode = tempCode.replace(match[0], placeholder);
+            }
+
+            // Étape 2 : Balisage sur le code restant (sans CSS/script)
+            let result = tempCode;
             const components = [];
-            while ((match = componentRegex.exec(code)) !== null) {
-                const name = match[1];
-                const content = match[2] || match[3] || '';
-                // Trouver la fin réelle du bloc en comptant les accolades
-                const fullBlock = extractFullBlock(code, match.index);
-                if (fullBlock) {
-                    components.push({ name, fullBlock, start: match.index });
-                }
-            }
 
-            // 2. Détecter les fonctions nommées : function nom() { ... }
-            const functionRegex = /function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*{/g;
-            while ((match = functionRegex.exec(code)) !== null) {
+            // Détection des composants React
+            const componentRegex = /const\s+([A-Z][a-zA-Z0-9_]*)\s*=\s*(?:\(\)\s*=>\s*{([\s\S]*?)}|\([^)]*\)\s*=>\s*{([\s\S]*?)})/g;
+            while ((match = componentRegex.exec(tempCode)) !== null) {
                 const name = match[1];
-                const fullBlock = extractFullBlock(code, match.index);
+                const fullBlock = extractFullBlock(tempCode, match.index);
                 if (fullBlock && !components.some(c => c.name === name)) {
-                    components.push({ name, fullBlock, start: match.index });
+                    components.push({ name, fullBlock });
                 }
             }
 
-            // 3. Détecter les hooks complets : const nom = useCallback(() => { ... }, [])
+            // Détection des fonctions nommées
+            const functionRegex = /function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g;
+            while ((match = functionRegex.exec(tempCode)) !== null) {
+                const name = match[1];
+                const fullBlock = extractFullBlock(tempCode, match.index);
+                if (fullBlock && !components.some(c => c.name === name)) {
+                    components.push({ name, fullBlock });
+                }
+            }
+
+            // Détection des hooks
             const hookRegex = /const\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(useCallback|useMemo|useEffect)\(/g;
-            while ((match = hookRegex.exec(code)) !== null) {
+            while ((match = hookRegex.exec(tempCode)) !== null) {
                 const name = match[1];
-                const fullBlock = extractFullBlock(code, match.index);
+                const fullBlock = extractFullBlock(tempCode, match.index);
                 if (fullBlock && !components.some(c => c.name === name)) {
-                    components.push({ name, fullBlock, start: match.index });
+                    components.push({ name, fullBlock });
                 }
             }
 
-            // 4. Détecter les fonctions fléchées avec paramètres : const nom = (params) => { ... }
-            const arrowRegex = /const\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(?:\([^)]*\)\s*=>\s*{([\s\S]*?)}|\(\)\s*=>\s*{([\s\S]*?)})/g;
-            while ((match = arrowRegex.exec(code)) !== null) {
-                const name = match[1];
-                const fullBlock = extractFullBlock(code, match.index);
-                if (fullBlock && !components.some(c => c.name === name)) {
-                    components.push({ name, fullBlock, start: match.index });
-                }
-            }
-
-            // Trier par position (du plus petit au plus grand)
-            components.sort((a, b) => a.start - b.start);
-
-            // Injecter les balises (en partant de la fin)
-            let finalCode = code;
+            // Trier et injecter les balises
+            components.sort((a, b) => tempCode.indexOf(a.fullBlock) - tempCode.indexOf(b.fullBlock));
+            let finalCode = tempCode;
             const inserted = [];
             for (let i = components.length - 1; i >= 0; i--) {
                 const comp = components[i];
-                // Vérifier si déjà balisé
-                const sectionRegex = new RegExp(`\/\/\\s*==SECTION:\\s*${comp.name}==`);
-                if (sectionRegex.test(finalCode)) {
-                    log(`🏷️ Section "${comp.name}" déjà balisée, ignorée`, 'tag');
-                    continue;
-                }
-                const taggedSection = `// ==SECTION: ${comp.name}==\n${comp.fullBlock}\n// ==END==`;
-                finalCode = finalCode.replace(comp.fullBlock, taggedSection);
+                if (new RegExp(`\/\/\\s*==SECTION:\\s*${comp.name}==`).test(finalCode)) continue;
+                const tagged = `// ==SECTION: ${comp.name}==\n${comp.fullBlock}\n// ==END==`;
+                finalCode = finalCode.replace(comp.fullBlock, tagged);
                 inserted.push(comp.name);
-                log(`🏷️ Balise ajoutée pour "${comp.name}"`, 'tag');
             }
+
+            // Étape 3 : Restaurer les blocs protégés
+            protectedBlocks.forEach(block => {
+                finalCode = finalCode.replace(block.placeholder, block.content);
+            });
 
             // Mettre à jour le mapping
             const newMapping = {};
-            const sections = extractSections(finalCode);
-            sections.forEach(s => {
-                newMapping[s.name] = {
-                    originalName: s.name,
-                    type: 'auto-detected',
-                    timestamp: new Date().toISOString()
-                };
+            extractSections(finalCode).forEach(s => {
+                newMapping[s.name] = { originalName: s.name, type: 'auto-detected', timestamp: new Date().toISOString() };
             });
             sectionMapping = newMapping;
-            localStorage.setItem('myagent_section_mapping', JSON.stringify(sectionMapping));
-
-            log(`🏷️ ✅ Balisage terminé : ${inserted.length} sections ajoutées`, 'success');
-
-            return {
-                code: finalCode,
-                added: inserted,
-                mapping: newMapping
-            };
+            log(`🏷️ ${inserted.length} sections balisées (CSS/script protégés)`, 'success');
+            return { code: finalCode, added: inserted };
         }
 
-        // === EXTRAIRE UN BLOC COMPLET (avec accolades) ===
         function extractFullBlock(code, startIndex) {
-            // Trouver la première accolade ouvrante
             let braceIndex = code.indexOf('{', startIndex);
             if (braceIndex === -1) return null;
-
-            let depth = 0;
-            let i = braceIndex;
+            let depth = 0,
+                i = braceIndex;
             while (i < code.length) {
                 if (code[i] === '{') depth++;
                 else if (code[i] === '}') {
                     depth--;
                     if (depth === 0) {
-                        // On a trouvé la fin du bloc
-                        // On remonte jusqu'au début de la déclaration
                         let declStart = startIndex;
-                        // On prend tout depuis le début de la ligne
                         while (declStart > 0 && code[declStart - 1] !== '\n') declStart--;
-                        const fullBlock = code.substring(declStart, i + 1);
-                        return fullBlock;
+                        return code.substring(declStart, i + 1);
                     }
                 }
                 i++;
@@ -350,92 +485,34 @@
             return null;
         }
 
-        // === NETTOYER LES BALISES (si elles sont mal placées) ===
-        function cleanTags(code) {
-            // Supprime toutes les balises SECTION/END
-            let cleaned = code.replace(/\/\/\s*==SECTION:.*==\n?/g, '');
-            cleaned = cleaned.replace(/\/\/\s*==END==\n?/g, '');
-            // Supprime les lignes vides en trop
-            cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-            log('🧹 Balises supprimées', 'success');
-            return cleaned;
-        }
-
-        // === APPLIQUER LE BALISAGE PROPRE ===
         function applyAutoTag() {
             const code = fullCodeInput.value.trim();
-            if (!code) {
-                alert('📄 Colle d\'abord du code !');
-                return;
-            }
-
-            if (hasTags(code)) {
-                if (!confirm('⚠️ Le code est déjà balisé. Voulez-vous le re-baliser proprement ?')) {
-                    return;
-                }
-            }
-
+            if (!code) { alert('📄 Colle du code !'); return; }
             const result = autoTagCodePropre(code);
             if (result) {
                 fullCode = result.code;
                 fullCodeInput.value = result.code;
                 updateFinalCodeDisplay();
                 updateCodeStats();
-                tagStatus.textContent = '✅ Balisé (propre)';
+                tagStatus.textContent = '✅ Balisé (CSS-safe)';
                 tagStatus.className = 'text-xs text-green-400';
-                log(`🏷️ ${result.added.length} sections balisées proprement`, 'success');
-                patchesContainer.innerHTML = `<div class="text-gray-500 italic">✅ Code balisé ! ${result.added.length} sections détectées. Envoie une instruction pour patcher.</div>`;
+                log(`🏷️ ${result.added.length} sections balisées`, 'success');
+                patchesContainer.innerHTML = `<div class="text-gray-500 italic">✅ Code balisé ! ${result.added.length} sections.</div>`;
+                updateSandbox();
             }
         }
 
-        // === NETTOYER LES BALISES ===
-        function applyCleanTags() {
-            const code = fullCodeInput.value.trim();
-            if (!code) {
-                alert('📄 Colle du code d\'abord.');
-                return;
-            }
-            if (!hasTags(code)) {
-                alert('⚠️ Aucune balise à nettoyer.');
-                return;
-            }
-            if (!confirm('🧹 Supprimer toutes les balises du code ?')) return;
-            const cleaned = cleanTags(code);
-            fullCode = cleaned;
-            fullCodeInput.value = cleaned;
-            updateFinalCodeDisplay();
-            updateCodeStats();
-            tagStatus.textContent = '⚪ Non balisé';
-            tagStatus.className = 'text-xs text-gray-400';
-            log('🧹 Balises nettoyées', 'success');
-            patchesContainer.innerHTML = '<div class="text-gray-500 italic">🧹 Code nettoyé. Clique sur "Baliser Propre" pour le re-baliser.</div>';
-        }
-
-        // === ENVOI DE LA REQUÊTE ===
-        async function sendRequest() {
+        // === ENVOI DE REQUÊTE ===
+        async function sendRequest(instruction) {
             const apiKey = localStorage.getItem('myagent_api_key');
-            if (!apiKey) {
-                log('❌ Aucune clé API sauvegardée', 'error');
-                alert('⚠️ Sauvegarde d\'abord ta clé API.');
-                return;
-            }
+            if (!apiKey) { log('❌ Aucune clé API', 'error'); alert('⚠️ Sauvegarde ta clé API.'); return false; }
 
             let code = fullCodeInput.value.trim();
-            const instructions = instructionsInput.value.trim();
-
-            if (!code) {
-                log('❌ Aucun code source', 'error');
-                alert('📄 Colle le code source.');
-                return;
-            }
-            if (!instructions) {
-                log('❌ Aucune instruction', 'error');
-                alert('📝 Donne des instructions.');
-                return;
-            }
+            if (!code) { log('❌ Aucun code', 'error'); alert('📄 Colle du code.'); return false; }
+            if (!instruction) { log('❌ Aucune instruction', 'error'); alert('📝 Donne une instruction.'); return false; }
 
             if (!hasTags(code)) {
-                log('⚠️ Code non balisé. Balisage propre automatique en cours...', 'warning');
+                log('⚠️ Code non balisé. Balisage CSS-safe auto...', 'warning');
                 const result = autoTagCodePropre(code);
                 if (result) {
                     code = result.code;
@@ -443,18 +520,15 @@
                     fullCode = code;
                     updateFinalCodeDisplay();
                     updateCodeStats();
-                    tagStatus.textContent = '✅ Balisé (propre)';
+                    tagStatus.textContent = '✅ Balisé (CSS-safe)';
                     tagStatus.className = 'text-xs text-green-400';
-                    log('🏷️ Balisage propre effectué avant l\'envoi', 'tag');
                 }
             }
 
             const sections = extractSections(code);
             const sectionsNames = sections.map(s => s.name).join(', ');
-            log(`📤 Envoi de la requête avec ${sections.length} sections : ${sectionsNames}`, 'info');
+            log(`📤 Envoi: "${instruction.substring(0, 50)}..." (${sections.length} sections)`, 'info');
 
-            sendBtn.disabled = true;
-            sendBtn.textContent = '⏳';
             patchesContainer.innerHTML = '<div class="text-gray-400 italic">⏳ Envoi en cours...</div>';
 
             try {
@@ -468,66 +542,32 @@
                         model: 'deepseek-v4-flash',
                         messages: [{
                             role: 'system',
-                            content: `Tu es un expert en React/HTML. Voici le code source avec des sections balisées (// ==SECTION: nom== ... // ==END==). Sections existantes : ${sectionsNames}.
-
-                    RÉPONDS UNIQUEMENT AVEC UN JSON STRUCTURÉ :
-                    {
-                        "patches": [
-                            {
-                                "section": "nom_de_la_section",
-                                "newContent": "le nouveau code de la section (sans les balises SECTION/END)"
-                            }
-                        ],
-                        "explanation": "brève explication des changements"
-                    }
-
-                    Si tu dois créer une nouvelle section, utilise un nom unique.
-                    Si tu dois supprimer une section, mets "newContent": null.
-                    Le JSON doit être valide et ne contenir aucun autre texte.`
+                            content: `Tu es un expert en React/HTML. Voici le code source avec des sections balisées (// ==SECTION: nom== ... // ==END==). Sections: ${sectionsNames}.
+                    ATTENTION: Ne modifie JAMAIS le contenu des balises <style>. Réponds UNIQUEMENT avec un JSON: {"patches": [{"section": "nom", "newContent": "code"}]}`
                         }, {
                             role: 'user',
-                            content: `Code source actuel :\n${code}\n\nInstructions : ${instructions}`
+                            content: `Code:\n${code}\n\nInstruction: ${instruction}`
                         }],
                         stream: false
                     })
                 });
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP ${response.status}: ${errorText}`);
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
                 const data = await response.json();
                 const responseText = data.choices[0].message.content;
+                const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error('Aucun JSON trouvé');
 
-                log(`📥 Réponse reçue (${responseText.length} caractères)`, 'info');
-
-                let patchesData;
-                try {
-                    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        patchesData = JSON.parse(jsonMatch[0]);
-                        log(`✅ JSON parsé avec succès`, 'success');
-                    } else {
-                        throw new Error('Aucun JSON trouvé');
-                    }
-                } catch (err) {
-                    log(`❌ Erreur de parsing JSON : ${err.message}`, 'error');
-                    log(`📄 Réponse brute : ${responseText.substring(0, 300)}...`, 'debug');
-                    patchesContainer.innerHTML = `<div class="text-red-400 text-sm">❌ Erreur : ${err.message}</div>`;
-                    return;
-                }
-
-                currentPatchesData = patchesData;
+                const patchesData = JSON.parse(jsonMatch[0]);
                 const patches = patchesData.patches || [];
-
                 if (patches.length === 0) {
                     patchesContainer.innerHTML = '<div class="text-yellow-400 text-sm">⚠️ Aucun patch généré.</div>';
                     log('Aucun patch généré', 'warning');
-                    return;
+                    return false;
                 }
 
-                log(`📦 ${patches.length} patch(s) généré(s) : ${patches.map(p => p.section).join(', ')}`, 'success');
+                log(`📦 ${patches.length} patch(s) générés`, 'success');
 
                 let html = `
                     <div class="bg-[#0d1117] border border-[#238636] rounded-lg p-2 space-y-1">
@@ -550,42 +590,29 @@
                 patchesContainer.innerHTML = html;
                 patchTimestamp.textContent = new Date().toLocaleTimeString();
 
-                // === ÉVÉNEMENTS DES BOUTONS ===
                 document.querySelectorAll('.applyPatchBtn').forEach(btn => {
                     btn.addEventListener('click', function() {
-                        const index = parseInt(this.dataset.index);
-                        const patch = currentPatchesData.patches[index];
-                        const success = applyPatch(patch);
-                        if (success) {
-                            log(`✅ Patch "${patch.section}" appliqué avec succès`, 'success');
-                            this.textContent = '✅ Appliqué';
-                            this.disabled = true;
-                            this.className = 'bg-green-500/20 text-green-400 px-2 py-1 rounded-lg text-xs';
-                            if (hasTags(fullCode)) {
-                                tagStatus.textContent = '✅ Balisé (propre)';
-                                tagStatus.className = 'text-xs text-green-400';
-                            }
-                        } else {
-                            log(`❌ Échec du patch "${patch.section}"`, 'error');
-                        }
+                        const idx = parseInt(this.dataset.index);
+                        const patch = patches[idx];
+                        applyPatch(patch, instruction);
+                        this.textContent = '✅ Appliqué';
+                        this.disabled = true;
+                        this.className = 'bg-green-500/20 text-green-400 px-2 py-1 rounded-lg text-xs';
                     });
                 });
 
                 document.querySelectorAll('.previewPatchBtn').forEach(btn => {
                     btn.addEventListener('click', function() {
-                        const index = parseInt(this.dataset.index);
-                        const patch = currentPatchesData.patches[index];
-                        log(`🔍 Aperçu de "${patch.section}" :\n${patch.newContent || 'null (suppression)'}`, 'debug');
+                        const idx = parseInt(this.dataset.index);
+                        const patch = patches[idx];
                         alert(`📌 Section: ${patch.section}\n\n${patch.newContent || '⚠️ Suppression'}`);
                     });
                 });
 
                 document.getElementById('applyAllBtn')?.addEventListener('click', function() {
-                    let successCount = 0;
-                    currentPatchesData.patches.forEach(p => {
-                        if (applyPatch(p)) successCount++;
-                    });
-                    log(`✅ ${successCount}/${currentPatchesData.patches.length} patches appliqués`, 'success');
+                    let count = 0;
+                    patches.forEach(p => { if (applyPatch(p, instruction)) count++; });
+                    log(`✅ ${count}/${patches.length} patches appliqués`, 'success');
                     this.textContent = '✅ Appliqué';
                     this.disabled = true;
                     document.querySelectorAll('.applyPatchBtn').forEach(b => {
@@ -593,77 +620,63 @@
                         b.disabled = true;
                         b.className = 'bg-green-500/20 text-green-400 px-2 py-1 rounded-lg text-xs';
                     });
-                    if (hasTags(fullCode)) {
-                        tagStatus.textContent = '✅ Balisé (propre)';
-                        tagStatus.className = 'text-xs text-green-400';
-                    }
                 });
+
+                return true;
 
             } catch (err) {
                 log(`❌ Erreur : ${err.message}`, 'error');
                 patchesContainer.innerHTML = `<div class="text-red-400 text-sm">❌ ${err.message}</div>`;
-                console.error(err);
-            } finally {
-                sendBtn.disabled = false;
-                sendBtn.textContent = '🚀';
+                return false;
             }
         }
 
-        // === APPLIQUER UN PATCH ===
-        function applyPatch(patch) {
-            const { section, newContent } = patch;
-            log(`Application du patch sur la section "${section}"...`, 'debug');
+        // === GESTION DES ENVOIS ===
+        sendBtn.addEventListener('click', async () => {
+            const instruction = instructionsInput.value.trim();
+            if (!instruction) { alert('📝 Donne une instruction.'); return; }
+            await sendRequest(instruction);
+        });
 
-            if (newContent === null || newContent === 'null') {
-                const regex = new RegExp(`\/\/\\s*==SECTION:\\s*${escapeRegex(section)}==[\\s\\S]*?\\/\\/\\s*==END==`, 'g');
-                fullCode = fullCode.replace(regex, '');
-                log(`Section "${section}" supprimée`, 'success');
-                fullCodeInput.value = fullCode;
-                updateFinalCodeDisplay();
-                updateCodeStats();
-                finalCodeDisplay.textContent = fullCode;
-                delete sectionMapping[section];
-                localStorage.setItem('myagent_section_mapping', JSON.stringify(sectionMapping));
-                return true;
+        instructionsInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const instruction = instructionsInput.value.trim();
+                if (instruction) sendRequest(instruction);
+            }
+        });
+
+        // === MODE BATCH ===
+        toggleBatchBtn.addEventListener('click', () => {
+            isBatchMode = !isBatchMode;
+            batchContainer.classList.toggle('hidden');
+            toggleBatchBtn.textContent = isBatchMode ? '📋 Mode batch (activé)' : '📋 Mode batch';
+            toggleBatchBtn.className = `text-xs px-2 py-0.5 rounded-lg transition ${isBatchMode ? 'bg-[#f0883e] text-white' : 'bg-[#1f6feb] hover:bg-[#388bfd] text-white'}`;
+        });
+
+        batchSendBtn.addEventListener('click', async () => {
+            const batchText = batchInput.value.trim();
+            if (!batchText) { alert('📝 Écris des instructions.'); return; }
+            const instructions = batchText.split('\n').filter(line => line.trim());
+            if (instructions.length === 0) { alert('📝 Écris au moins une instruction.'); return; }
+
+            log(`📋 Batch: ${instructions.length} instructions`, 'info');
+            patchesContainer.innerHTML = `<div class="text-gray-400 italic">⏳ Exécution du batch (${instructions.length} instructions)...</div>`;
+
+            let successCount = 0;
+            for (let i = 0; i < instructions.length; i++) {
+                const instr = instructions[i].trim();
+                log(`📤 Batch ${i+1}/${instructions.length}: "${instr.substring(0, 40)}..."`, 'info');
+                const result = await sendRequest(instr);
+                if (result) successCount++;
+                if (i < instructions.length - 1) await new Promise(r => setTimeout(r, 500));
             }
 
-            let cleanContent = newContent;
-            cleanContent = cleanContent.replace(/^```(?:jsx|javascript|html)?\s*/i, '');
-            cleanContent = cleanContent.replace(/\s*```$/, '');
-            cleanContent = cleanContent.trim();
+            log(`✅ Batch terminé : ${successCount}/${instructions.length} réussis`, 'success');
+            patchesContainer.innerHTML += `<div class="text-green-400 text-sm mt-1">✅ Batch terminé : ${successCount}/${instructions.length} réussis</div>`;
+        });
 
-            const regex = new RegExp(`(\/\/\\s*==SECTION:\\s*${escapeRegex(section)}==)[\\s\\S]*?(\/\/\\s*==END==)`, 'g');
-            const match = regex.exec(fullCode);
-
-            if (match) {
-                const newSection = `// ==SECTION: ${section}==\n${cleanContent}\n// ==END==`;
-                fullCode = fullCode.replace(match[0], newSection);
-                log(`Section "${section}" mise à jour (remplacement)`, 'success');
-            } else {
-                const newSection = `\n// ==SECTION: ${section}==\n${cleanContent}\n// ==END==`;
-                fullCode += newSection;
-                log(`Section "${section}" créée (nouvelle)`, 'success');
-                sectionMapping[section] = {
-                    originalName: section,
-                    type: 'patch-created',
-                    timestamp: new Date().toISOString()
-                };
-                localStorage.setItem('myagent_section_mapping', JSON.stringify(sectionMapping));
-            }
-
-            fullCodeInput.value = fullCode;
-            updateFinalCodeDisplay();
-            updateCodeStats();
-            finalCodeDisplay.textContent = fullCode;
-            return true;
-        }
-
-        // === ÉCHAPPEMENT REGEX ===
-        function escapeRegex(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        }
-
-        // === GESTION API KEY ET SOLDE ===
+        // === GESTION API KEY ===
         function loadKey() {
             const saved = localStorage.getItem('myagent_api_key');
             if (saved) {
@@ -671,19 +684,12 @@
                 keyStatus.textContent = '✅ Clé chargée';
                 keyStatus.className = 'text-xs text-green-400';
                 fetchBalance(saved);
-                log('🔑 Clé chargée depuis localStorage', 'success');
-            } else {
-                log('🔑 Aucune clé sauvegardée', 'info');
             }
         }
 
         function saveKey() {
             const key = apiKeyInput.value.trim();
-            if (!key) {
-                log('❌ Clé vide', 'error');
-                alert('❌ Colle ta clé.');
-                return;
-            }
+            if (!key) { alert('❌ Colle ta clé.'); return; }
             localStorage.setItem('myagent_api_key', key);
             keyStatus.textContent = '✅ Sauvegardée';
             keyStatus.className = 'text-xs text-green-400';
@@ -700,24 +706,19 @@
                 if (data && data.balance_infos) {
                     const info = data.balance_infos[0];
                     balanceDisplay.textContent = `${parseFloat(info.total_balance).toFixed(2)} ${info.currency}`;
-                    log(`💰 Solde : ${info.total_balance} ${info.currency}`, 'success');
-                } else {
-                    balanceDisplay.textContent = '❌';
-                    log('⚠️ Solde non disponible', 'warning');
                 }
             } catch (e) {
                 balanceDisplay.textContent = '❌';
-                log('❌ Erreur solde', 'error');
             }
         }
 
-        // === ÉVÉNEMENTS ===
         saveKeyBtn.addEventListener('click', saveKey);
         refreshBalanceBtn.addEventListener('click', () => {
             const key = localStorage.getItem('myagent_api_key');
             if (key) fetchBalance(key);
         });
 
+        // === ÉVÉNEMENTS DIVERS ===
         fullCodeInput.addEventListener('input', () => {
             fullCode = fullCodeInput.value;
             updateFinalCodeDisplay();
@@ -731,100 +732,72 @@
             }
         });
 
-        sendBtn.addEventListener('click', sendRequest);
-        instructionsInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') sendRequest();
+        autoTagBtn.addEventListener('click', applyAutoTag);
+        fixCssBtn.addEventListener('click', applyFixCss);
+
+        loadExampleBtn.addEventListener('click', () => {
+            const example = `<!DOCTYPE html>
+        <html>
+        <head><title>Test</title>
+        <style>
+            body { background: #f0f0f0; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+            .container { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+            h1 { color: #333; }
+            button { background: #007bff; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+            button:hover { background: #0056b3; }
+        </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🎨 CyberNotebook</h1>
+                <p>Un outil de colorimétrie</p>
+                <button onclick="alert('Coucou !')">Clique-moi</button>
+            </div>
+        </body>
+        </html>`;
+            fullCodeInput.value = example;
+            fullCode = example;
+            updateFinalCodeDisplay();
+            updateCodeStats();
+            updateSandbox();
+            log('📥 Exemple chargé', 'success');
+            patchesContainer.innerHTML = '<div class="text-gray-500 italic">✅ Exemple chargé. Clique sur "Baliser" ou envoie une instruction.</div>';
         });
 
-        // === BALISAGE PROPRE ===
-        autoTagBtn.addEventListener('click', applyAutoTag);
-        cleanTagsBtn.addEventListener('click', applyCleanTags);
-
-        // === EXEMPLE ===
-        loadExampleBtn.addEventListener('click', () => {
-            const example = `import React, { useState, useEffect, useCallback } from 'react';
-
-        const CyberNotebookApp = () => {
-            const [books, setBooks] = useState({});
-            const [currentPage, setCurrentPage] = useState(0);
-            const [isDrawingMode, setIsDrawingMode] = useState(false);
-
-            const renderCanvas = useCallback(() => {
-                console.log('Rendu canvas');
-                const canvas = document.getElementById('canvas');
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#0f0f12';
-                ctx.fillRect(0, 0, 360, 560);
-            }, []);
-
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                console.log('Submit !');
-            };
-
-            useEffect(() => {
-                renderCanvas();
-            }, [renderCanvas]);
-
-            return (
-                <div>
-                    <h1>CyberNotebook</h1>
-                    <button onClick={toggleDrawingMode}>Dessiner</button>
-                </div>
-            );
-        };
-
-        export default CyberNotebookApp;`;
-
-        fullCodeInput.value = example;
-        fullCode = example;
-        updateFinalCodeDisplay();
-        updateCodeStats();
-        log('📥 Exemple de code chargé', 'success');
-        patchesContainer.innerHTML = '<div class="text-gray-500 italic">✅ Code exemple chargé. Clique sur "Baliser Propre" ou envoie une instruction.</div>';
-        if (hasTags(example)) {
-            tagStatus.textContent = '✅ Balisé';
-            tagStatus.className = 'text-xs text-green-400';
-        } else {
-            tagStatus.textContent = '⚪ Non balisé';
-            tagStatus.className = 'text-xs text-gray-400';
-        }
-    });
-
-        // === RESET ===
         resetCodeBtn.addEventListener('click', () => {
-            if (confirm('🗑️ Réinitialiser tout (code + mapping) ?')) {
+            if (confirm('🗑️ Réinitialiser tout ?')) {
                 fullCode = '';
                 fullCodeInput.value = '';
                 sectionMapping = {};
+                patchHistory = [];
                 localStorage.removeItem('myagent_full_code');
                 localStorage.removeItem('myagent_section_mapping');
+                localStorage.removeItem('myagent_patch_history');
                 updateFinalCodeDisplay();
                 updateCodeStats();
                 patchesContainer.innerHTML = '<div class="text-gray-500 italic">🧹 Tout réinitialisé</div>';
                 tagStatus.textContent = '⚪ Non balisé';
                 tagStatus.className = 'text-xs text-gray-400';
-                log('🧹 Code et mapping réinitialisés', 'info');
+                log('🧹 Tout réinitialisé', 'info');
+                updateSandbox();
             }
         });
 
-        // === COPIER / EXPORTER ===
         copyFinalBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(fullCode).then(() => {
-                log('📋 Code final copié', 'success');
                 const orig = copyFinalBtn.textContent;
                 copyFinalBtn.textContent = '✅';
                 setTimeout(() => copyFinalBtn.textContent = orig, 1500);
+                log('📋 Code copié', 'success');
             });
         });
 
         exportFinalBtn.addEventListener('click', () => {
-            const blob = new Blob([fullCode], { type: 'text/javascript' });
+            const blob = new Blob([fullCode], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'code_balise.js';
+            a.download = 'code.html';
             a.click();
             URL.revokeObjectURL(url);
             log('⬇️ Code exporté', 'success');
@@ -834,13 +807,12 @@
         loadKey();
         loadFullCode();
         updateCodeStats();
-        log('🚀 MyAgent v4.1 prêt - Balisage Propre', 'success');
+        updateSandbox();
+        log('🚀 MyAgent v5.2 prêt (CSS protégé) !', 'success');
         if (fullCode) {
-            if (hasTags(fullCode)) {
-                patchesContainer.innerHTML = '<div class="text-gray-500 italic">✅ Code balisé proprement. Envoie une instruction pour patcher.</div>';
-            } else {
-                patchesContainer.innerHTML = '<div class="text-gray-500 italic">📄 Code non balisé. Clique sur "Baliser Propre" ou envoie une instruction pour le faire automatiquement.</div>';
-            }
+            patchesContainer.innerHTML = hasTags(fullCode) ?
+                '<div class="text-gray-500 italic">✅ Code balisé. Envoie une instruction.</div>' :
+                '<div class="text-gray-500 italic">📄 Code non balisé. Clique sur "Baliser" ou envoie une instruction.</div>';
         }
     })();
 </script>
