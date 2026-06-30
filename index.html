@@ -16,14 +16,15 @@
             <div class="flex items-center gap-3">
                 <span class="text-3xl">🧠</span>
                 <h1 class="text-2xl font-bold text-[#58a6ff] tracking-tight">MyAgent</h1>
-                <span class="text-xs bg-[#21262d] text-gray-400 px-2 py-0.5 rounded-full border border-[#30363d]">v1</span>
+                <span class="text-xs bg-[#21262d] text-gray-400 px-2 py-0.5 rounded-full border border-[#30363d]">v2</span>
             </div>
             <div class="text-xs text-gray-500">🔒 localStorage</div>
         </header>
 
-        <!-- Zone Clé API + Solde -->
+        <!-- Zone Clé API + Solde + Compteur -->
         <section class="bg-[#0d1117] border border-[#30363d] rounded-xl p-4 space-y-3">
             <div class="flex flex-col sm:flex-row gap-3">
+                <!-- Clé API -->
                 <div class="flex-1">
                     <label for="apiKeyInput" class="flex items-center gap-2 text-sm font-medium text-gray-300">
                         <span>🔑</span> Clé API DeepSeek
@@ -39,9 +40,10 @@
                 <div id="keyStatus" class="text-xs text-gray-400 flex items-center gap-1">
                     ⚪ Aucune clé sauvegardée
                 </div>
+                <div id="keyValidation" class="text-xs hidden"></div>
             </div>
 
-            <!-- Affichage du solde -->
+            <!-- Solde -->
             <div class="sm:w-48 flex-shrink-0 border-t sm:border-t-0 sm:border-l border-[#30363d] pt-3 sm:pt-0 sm:pl-3 mt-3 sm:mt-0">
                 <div class="flex items-center justify-between">
                     <span class="text-sm font-medium text-gray-300">💰 Solde</span>
@@ -58,6 +60,15 @@
                 <div>🎁 Gratuit : <span id="grantedBalance">—</span></div>
             </div>
         </div>
+    </div>
+
+    <!-- Compteur de tokens -->
+    <div class="flex items-center justify-between border-t border-[#30363d] pt-2 mt-2">
+        <span class="text-xs text-gray-500">📊 Tokens : <span id="totalTokens">0</span></span>
+        <span class="text-xs text-gray-500">💰 Coût : <span id="totalCost">0.0000</span> €</span>
+        <button id="resetStatsBtn" class="text-xs text-red-400 hover:text-red-300 transition">
+            ↺ Reset
+        </button>
     </div>
 </section>
 
@@ -85,15 +96,27 @@
 </button>
 </section>
 
-<!-- Résultat -->
+<!-- Résultat avec bouton de copie -->
 <section class="border-t border-[#30363d] pt-4">
     <div class="flex items-center justify-between mb-2">
         <span class="text-sm font-medium text-gray-300">📬 Réponse</span>
-        <span class="text-xs text-gray-500" id="timestamp"></span>
+        <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500" id="timestamp"></span>
+            <button id="copyBtn"
+            class="text-xs bg-[#1f6feb] hover:bg-[#388bfd] text-white px-3 py-1 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+            📋 Copier
+        </button>
     </div>
-    <div id="result"
-    class="bg-[#0d1117] border border-[#30363d] rounded-xl p-4 min-h-[120px] text-sm text-gray-300 whitespace-pre-wrap font-mono overflow-auto">
-    ⏳ En attente de ta première requête…
+</div>
+<!-- Zone de résultat (code uniquement) -->
+<div id="result"
+class="bg-[#0d1117] border border-[#30363d] rounded-xl p-4 min-h-[120px] text-sm text-gray-300 whitespace-pre-wrap font-mono overflow-auto">
+⏳ En attente de ta première requête…
+</div>
+
+<!-- Zone des stats (séparée) -->
+<div id="statsBlock" class="mt-2 text-xs text-gray-500 bg-[#0d1117] border border-[#30363d] rounded-xl p-3 hidden">
+    <span id="statsContent"></span>
 </div>
 </section>
 
@@ -111,11 +134,18 @@
         const apiKeyInput = document.getElementById('apiKeyInput');
         const saveKeyBtn = document.getElementById('saveKeyBtn');
         const keyStatus = document.getElementById('keyStatus');
+        const keyValidation = document.getElementById('keyValidation');
         const codeInput = document.getElementById('codeInput');
         const instructionsInput = document.getElementById('instructionsInput');
         const sendBtn = document.getElementById('sendBtn');
         const resultDiv = document.getElementById('result');
         const timestamp = document.getElementById('timestamp');
+        const totalTokensSpan = document.getElementById('totalTokens');
+        const totalCostSpan = document.getElementById('totalCost');
+        const resetStatsBtn = document.getElementById('resetStatsBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const statsBlock = document.getElementById('statsBlock');
+        const statsContent = document.getElementById('statsContent');
 
         // Éléments pour le solde
         const balanceDisplay = document.getElementById('balanceDisplay');
@@ -124,56 +154,63 @@
         const grantedBalance = document.getElementById('grantedBalance');
         const refreshBalanceBtn = document.getElementById('refreshBalanceBtn');
 
-        // === Charger la clé ===
-        function loadKey() {
-            const saved = localStorage.getItem('myagent_api_key');
-            if (saved) {
-                apiKeyInput.value = saved;
-                keyStatus.innerHTML = '✅ Clé chargée depuis localStorage';
-                keyStatus.className = 'text-xs text-green-400 flex items-center gap-1';
-                fetchBalance(saved); // Récupère le solde automatiquement
-            } else {
-                keyStatus.innerHTML = '⚪ Aucune clé sauvegardée (entre ta clé et clique sur Sauvegarder)';
-                keyStatus.className = 'text-xs text-gray-400 flex items-center gap-1';
-                balanceDisplay.textContent = '🔑 Aucune clé';
-                balanceDisplay.className = 'text-sm font-mono text-gray-500 mt-1';
-                balanceDetails.classList.add('hidden');
+        // === Nettoyer les backticks ===
+        function cleanCodeResponse(text) {
+            // Supprime les ```html, ```jsx, ```javascript, ``` en début et fin
+            let cleaned = text.replace(/^```(?:html|jsx|javascript)?\s*/i, '');
+            cleaned = cleaned.replace(/\s*```$/, '');
+            return cleaned.trim();
+        }
+
+        // === Chargement des stats depuis localStorage ===
+        function loadStats() {
+            const tokens = parseInt(localStorage.getItem('myagent_total_tokens')) || 0;
+            const cost = parseFloat(localStorage.getItem('myagent_total_cost')) || 0;
+            totalTokensSpan.textContent = tokens;
+            totalCostSpan.textContent = cost.toFixed(6);
+        }
+
+        // === Sauvegarde des stats ===
+        function saveStats(tokens, cost) {
+            const currentTokens = parseInt(localStorage.getItem('myagent_total_tokens')) || 0;
+            const currentCost = parseFloat(localStorage.getItem('myagent_total_cost')) || 0;
+            localStorage.setItem('myagent_total_tokens', currentTokens + tokens);
+            localStorage.setItem('myagent_total_cost', (currentCost + cost).toFixed(6));
+            loadStats();
+        }
+
+        // === Réinitialiser les stats ===
+        function resetStats() {
+            if (confirm('🔄 Réinitialiser le compteur de tokens et le coût ?')) {
+                localStorage.removeItem('myagent_total_tokens');
+                localStorage.removeItem('myagent_total_cost');
+                loadStats();
             }
         }
 
-        // === Sauvegarder la clé ===
-        function saveKey() {
-            const key = apiKeyInput.value.trim();
-            if (!key) {
-                alert('❌ Merci de coller ta clé API avant de sauvegarder.');
-                return;
-            }
-            localStorage.setItem('myagent_api_key', key);
-            keyStatus.innerHTML = '✅ Clé sauvegardée dans localStorage !';
-            keyStatus.className = 'text-xs text-green-400 flex items-center gap-1';
-            fetchBalance(key);
-            alert('🔐 Clé sauvegardée avec succès ! Elle reste sur ton appareil.');
-        }
-
-        // === Récupérer le solde (endpoint officiel) ===
-        async function fetchBalance(apiKey) {
+        // === Récupérer le solde ===
+        async function fetchBalance(apiKey, silent = false) {
             if (!apiKey) {
                 apiKey = localStorage.getItem('myagent_api_key');
                 if (!apiKey) {
-                    balanceDisplay.textContent = '🔑 Aucune clé';
-                    balanceDisplay.className = 'text-sm font-mono text-gray-500 mt-1';
-                    balanceDetails.classList.add('hidden');
+                    if (!silent) {
+                        balanceDisplay.textContent = '🔑 Aucune clé';
+                        balanceDisplay.className = 'text-sm font-mono text-gray-500 mt-1';
+                        balanceDetails.classList.add('hidden');
+                    }
                     return;
                 }
             }
 
-            refreshBalanceBtn.disabled = true;
-            balanceDisplay.textContent = '⏳ Chargement…';
-            balanceDisplay.className = 'text-sm font-mono text-gray-400 mt-1';
-            balanceDetails.classList.add('hidden');
+            if (!silent) {
+                refreshBalanceBtn.disabled = true;
+                balanceDisplay.textContent = '⏳ Chargement…';
+                balanceDisplay.className = 'text-sm font-mono text-gray-400 mt-1';
+                balanceDetails.classList.add('hidden');
+            }
 
             try {
-                const response = await fetch('https://api.deepseek.com/dashboard/billing/overview', {
+                const response = await fetch('https://api.deepseek.com/user/balance', {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${apiKey}`,
@@ -189,23 +226,7 @@
                 const data = await response.json();
                 console.log('Réponse brute du solde :', data);
 
-                // Adapté à la structure de l'API DeepSeek
-                if (data && data.total_balance !== undefined) {
-                    const total = parseFloat(data.total_balance || 0);
-                    const topped = parseFloat(data.topped_up_balance || 0);
-                    const granted = parseFloat(data.granted_balance || 0);
-                    const currency = data.currency || 'CNY';
-
-                    // Affichage principal
-                    balanceDisplay.textContent = `${total.toFixed(2)} ${currency}`;
-                    balanceDisplay.className = 'text-sm font-mono font-semibold text-green-400 mt-1';
-
-                    // Détails
-                    toppedUpBalance.textContent = topped.toFixed(2);
-                    grantedBalance.textContent = granted.toFixed(2);
-                    balanceDetails.classList.remove('hidden');
-                } else if (data && data.balance_infos && data.balance_infos.length > 0) {
-                    // Fallback au cas où l'ancienne structure persiste
+                if (data && data.is_available && data.balance_infos && data.balance_infos.length > 0) {
                     const info = data.balance_infos[0];
                     const total = parseFloat(info.total_balance || 0);
                     const topped = parseFloat(info.topped_up_balance || 0);
@@ -218,15 +239,19 @@
                     toppedUpBalance.textContent = topped.toFixed(2);
                     grantedBalance.textContent = granted.toFixed(2);
                     balanceDetails.classList.remove('hidden');
+
+                    if (!silent) {
+                        keyValidation.textContent = '✅ Clé valide';
+                        keyValidation.className = 'text-xs text-green-400 mt-1';
+                        keyValidation.classList.remove('hidden');
+                    }
                 } else {
-                    // Affichage brut en cas de format non reconnu
                     balanceDisplay.textContent = '⚠️ Format inattendu';
                     balanceDisplay.className = 'text-sm font-mono text-yellow-400 mt-1';
-                    console.warn('Structure inattendue :', data);
-                    // On tente d'afficher le premier champ numérique trouvé
-                    const firstNumber = Object.values(data).find(v => typeof v === 'number' && v > 0);
-                    if (firstNumber) {
-                        balanceDisplay.textContent = `${firstNumber}`;
+                    if (!silent) {
+                        keyValidation.textContent = '⚠️ Clé invalide ou compte sans solde';
+                        keyValidation.className = 'text-xs text-yellow-400 mt-1';
+                        keyValidation.classList.remove('hidden');
                     }
                 }
             } catch (err) {
@@ -234,9 +259,68 @@
                 balanceDisplay.textContent = `❌ ${err.message}`;
                 balanceDisplay.className = 'text-sm font-mono text-red-400 mt-1';
                 balanceDetails.classList.add('hidden');
+                if (!silent) {
+                    keyValidation.textContent = '❌ Clé invalide';
+                    keyValidation.className = 'text-xs text-red-400 mt-1';
+                    keyValidation.classList.remove('hidden');
+                }
             } finally {
-                refreshBalanceBtn.disabled = false;
+                if (!silent) {
+                    refreshBalanceBtn.disabled = false;
+                }
             }
+        }
+
+        // === Charger la clé ===
+        function loadKey() {
+            const saved = localStorage.getItem('myagent_api_key');
+            if (saved) {
+                apiKeyInput.value = saved;
+                keyStatus.innerHTML = '✅ Clé chargée depuis localStorage';
+                keyStatus.className = 'text-xs text-green-400 flex items-center gap-1';
+                fetchBalance(saved, true);
+            } else {
+                keyStatus.innerHTML = '⚪ Aucune clé sauvegardée (entre ta clé et clique sur Sauvegarder)';
+                keyStatus.className = 'text-xs text-gray-400 flex items-center gap-1';
+                balanceDisplay.textContent = '🔑 Aucune clé';
+                balanceDisplay.className = 'text-sm font-mono text-gray-500 mt-1';
+                balanceDetails.classList.add('hidden');
+                keyValidation.classList.add('hidden');
+            }
+        }
+
+        // === Sauvegarder la clé ===
+        function saveKey() {
+            const key = apiKeyInput.value.trim();
+            if (!key) {
+                alert('❌ Merci de coller ta clé API avant de sauvegarder.');
+                return;
+            }
+            localStorage.setItem('myagent_api_key', key);
+            keyStatus.innerHTML = '✅ Clé sauvegardée dans localStorage !';
+            keyStatus.className = 'text-xs text-green-400 flex items-center gap-1';
+            fetchBalance(key, false);
+            alert('🔐 Clé sauvegardée avec succès ! Vérification du solde en cours…');
+        }
+
+        // === Copier le code ===
+        function copyCode() {
+            const code = resultDiv.textContent;
+            if (!code || code.startsWith('⏳') || code.startsWith('❌')) {
+                alert('📄 Rien à copier pour l\'instant.');
+                return;
+            }
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '✅ Copié !';
+                copyBtn.disabled = true;
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.disabled = false;
+                }, 2000);
+            }).catch(err => {
+                alert('❌ Erreur lors de la copie : ' + err.message);
+            });
         }
 
         // === Envoyer la requête ===
@@ -254,8 +338,10 @@
             if (!instructions) { alert('📝 Donne des instructions sur ce que tu veux modifier.'); return; }
 
             resultDiv.textContent = '⏳ Envoi en cours… Patientez quelques secondes.';
+            statsBlock.classList.add('hidden');
             sendBtn.disabled = true;
             sendBtn.innerHTML = '⏳ En cours…';
+            copyBtn.disabled = true;
 
             try {
                 const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -280,23 +366,50 @@
                 }
 
                 const data = await response.json();
-                const modified = data.choices[0].message.content;
+                let modified = data.choices[0].message.content;
+
+                // Nettoyage des backticks
+                modified = cleanCodeResponse(modified);
+
+                // Affichage du code nettoyé
                 resultDiv.textContent = modified;
                 timestamp.textContent = new Date().toLocaleTimeString();
 
-                // Sauvegarde auto du code et des instructions
+                // === Calcul du coût et affichage dans le bloc séparé ===
+                const usage = data.usage;
+                if (usage) {
+                    const promptTokens = usage.prompt_tokens || 0;
+                    const completionTokens = usage.completion_tokens || 0;
+                    const totalTokens = usage.total_tokens || 0;
+
+                    const priceInput = 0.14;
+                    const priceOutput = 0.28;
+
+                    const costInput = (promptTokens / 1_000_000) * priceInput;
+                    const costOutput = (completionTokens / 1_000_000) * priceOutput;
+                    const totalCost = costInput + costOutput;
+
+                    saveStats(totalTokens, totalCost);
+
+                    // Affichage des stats dans le bloc séparé
+                    statsContent.textContent =
+                        `📊 Tokens : ${totalTokens} (${promptTokens} entrée, ${completionTokens} sortie) | 💰 Coût : ${totalCost.toFixed(6)} €`;
+                    statsBlock.classList.remove('hidden');
+                }
+
                 localStorage.setItem('myagent_last_code', code);
                 localStorage.setItem('myagent_last_instructions', instructions);
 
-                // Rafraîchir le solde après une requête
-                fetchBalance(apiKey);
+                fetchBalance(apiKey, true);
 
             } catch (err) {
                 resultDiv.textContent = `❌ Erreur : ${err.message}`;
                 console.error(err);
+                statsBlock.classList.add('hidden');
             } finally {
                 sendBtn.disabled = false;
                 sendBtn.innerHTML = '🚀 Modifier le code';
+                copyBtn.disabled = false;
             }
         }
 
@@ -311,13 +424,15 @@
         // === Événements ===
         saveKeyBtn.addEventListener('click', saveKey);
         sendBtn.addEventListener('click', sendRequest);
+        resetStatsBtn.addEventListener('click', resetStats);
+        copyBtn.addEventListener('click', copyCode);
+
         refreshBalanceBtn.addEventListener('click', () => {
             const key = localStorage.getItem('myagent_api_key');
-            if (key) fetchBalance(key);
+            if (key) fetchBalance(key, false);
             else alert('⚠️ Sauvegarde d\'abord ta clé API.');
         });
 
-        // Auto-save des champs à chaque changement
         codeInput.addEventListener('input', () => {
             localStorage.setItem('myagent_last_code', codeInput.value);
         });
@@ -325,15 +440,16 @@
             localStorage.setItem('myagent_last_instructions', instructionsInput.value);
         });
 
-        // Touche Entrée dans les instructions
         instructionsInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') sendRequest();
         });
 
         // === Init ===
         loadKey();
+        loadStats();
         loadFields();
         timestamp.textContent = '—';
+        statsBlock.classList.add('hidden');
     })();
 </script>
 
