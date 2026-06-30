@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🧠 MyAgent v4 — Balisage Auto</title>
+    <title>🧠 MyAgent v4.1 — Balisage Propre</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -15,8 +15,8 @@
         <header class="flex items-center justify-between border-b border-[#30363d] pb-3">
             <div class="flex items-center gap-2">
                 <span class="text-2xl">🧠</span>
-                <h1 class="text-xl font-bold text-[#58a6ff]">MyAgent v4</h1>
-                <span class="text-xs bg-[#f0883e] text-white px-2 py-0.5 rounded-full">⚡ Balisage Auto</span>
+                <h1 class="text-xl font-bold text-[#58a6ff]">MyAgent v4.1</h1>
+                <span class="text-xs bg-[#f0883e] text-white px-2 py-0.5 rounded-full">⚡ Balisage Propre</span>
             </div>
             <div class="text-xs text-gray-500">🔒 localStorage</div>
         </header>
@@ -42,12 +42,13 @@
             <div class="flex items-center justify-between">
                 <label class="text-sm font-medium text-gray-300">📄 Code Source</label>
                 <div class="flex gap-2">
-                    <button id="autoTagBtn" class="text-xs bg-[#f0883e] hover:bg-[#f0a83e] text-white px-3 py-1 rounded-lg transition">🏷️ Baliser Auto</button>
+                    <button id="autoTagBtn" class="text-xs bg-[#f0883e] hover:bg-[#f0a83e] text-white px-3 py-1 rounded-lg transition">🏷️ Baliser Propre</button>
+                    <button id="cleanTagsBtn" class="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-1 rounded-lg transition">🧹 Nettoyer Balises</button>
                     <button id="loadExampleBtn" class="text-xs bg-[#1f6feb] hover:bg-[#388bfd] px-2 py-1 rounded-lg">📥 Exemple</button>
                     <button id="resetCodeBtn" class="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-1 rounded-lg">🗑️</button>
                 </div>
             </div>
-            <textarea id="fullCodeInput" rows="8" placeholder="Colle ton code ici, MyAgent va le baliser automatiquement !"
+            <textarea id="fullCodeInput" rows="8" placeholder="Colle ton code ici, MyAgent va le baliser proprement !"
             class="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 font-mono resize-y"></textarea>
             <div class="flex justify-between text-xs text-gray-500">
                 <span id="codeStats">📊 0 sections</span>
@@ -105,7 +106,7 @@
 
 <!-- Footer -->
 <footer class="text-xs text-gray-600 border-t border-[#30363d] pt-2 flex justify-between">
-    <span>🧠 MyAgent v4 · Balisage Auto</span>
+    <span>🧠 MyAgent v4.1 · Balisage Propre</span>
     <span>⚡ cache automatique · mapping intelligent</span>
 </footer>
 </main>
@@ -133,6 +134,7 @@
         const loadExampleBtn = $('loadExampleBtn');
         const resetCodeBtn = $('resetCodeBtn');
         const autoTagBtn = $('autoTagBtn');
+        const cleanTagsBtn = $('cleanTagsBtn');
         const consoleOutput = $('consoleOutput');
         const clearConsoleBtn = $('clearConsoleBtn');
         const copyConsoleBtn = $('copyConsoleBtn');
@@ -183,7 +185,6 @@
                 updateFinalCodeDisplay();
                 updateCodeStats();
                 log('Code source chargé depuis localStorage', 'success');
-                // Vérifier si le code est balisé
                 if (hasTags(fullCode)) {
                     tagStatus.textContent = '✅ Balisé';
                     tagStatus.className = 'text-xs text-green-400';
@@ -191,7 +192,7 @@
                 } else {
                     tagStatus.textContent = '⚪ Non balisé';
                     tagStatus.className = 'text-xs text-gray-400';
-                    log('Code non balisé. Clique sur "Baliser Auto"', 'warning');
+                    log('Code non balisé. Clique sur "Baliser Propre"', 'warning');
                 }
             } else {
                 log('Aucun code source sauvegardé', 'info');
@@ -201,7 +202,6 @@
         function updateFinalCodeDisplay() {
             finalCodeDisplay.textContent = fullCode || '⏳ Aucun code source.';
             localStorage.setItem('myagent_full_code', fullCode);
-            // Sauvegarder le mapping
             localStorage.setItem('myagent_section_mapping', JSON.stringify(sectionMapping));
         }
 
@@ -230,62 +230,61 @@
             return sections;
         }
 
-        // === BALISAGE AUTOMATIQUE ===
-        function autoTagCode(code) {
-            log('🏷️ Début du balisage automatique...', 'tag');
+        // === BALISAGE PROPRE V4.1 ===
+        function autoTagCodePropre(code) {
+            log('🏷️ Balisage propre en cours...', 'tag');
 
-            // 1. Détecter les composants React (const Nom = () => { ... })
-            let tagged = code;
-            const componentRegex = /const\s+([A-Z][a-zA-Z0-9_]*)\s*=\s*(?:\(\)\s*=>\s*{([\s\S]*?)}|function\s*\(\)\s*{([\s\S]*?)})/g;
+            let result = code;
+            const detected = [];
+
+            // 1. Détecter les composants React : const Nom = () => { ... }
+            const componentRegex = /const\s+([A-Z][a-zA-Z0-9_]*)\s*=\s*(?:\(\)\s*=>\s*{([\s\S]*?)}|\([^)]*\)\s*=>\s*{([\s\S]*?)})/g;
             let match;
             const components = [];
             while ((match = componentRegex.exec(code)) !== null) {
                 const name = match[1];
                 const content = match[2] || match[3] || '';
-                components.push({ name, content, fullMatch: match[0] });
+                // Trouver la fin réelle du bloc en comptant les accolades
+                const fullBlock = extractFullBlock(code, match.index);
+                if (fullBlock) {
+                    components.push({ name, fullBlock, start: match.index });
+                }
             }
 
-            // 2. Détecter les fonctions nommées (function nom() { ... })
-            const functionRegex = /function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*{([\s\S]*?)}/g;
+            // 2. Détecter les fonctions nommées : function nom() { ... }
+            const functionRegex = /function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*{/g;
             while ((match = functionRegex.exec(code)) !== null) {
                 const name = match[1];
-                const content = match[3] || '';
-                // Éviter les doublons avec les composants
-                if (!components.some(c => c.name === name)) {
-                    components.push({ name, content, fullMatch: match[0] });
+                const fullBlock = extractFullBlock(code, match.index);
+                if (fullBlock && !components.some(c => c.name === name)) {
+                    components.push({ name, fullBlock, start: match.index });
                 }
             }
 
-            // 3. Détecter les hooks (useState, useEffect, useCallback, etc.)
-            const hookRegex = /const\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(?:useState|useEffect|useCallback|useMemo|useRef)\(([\s\S]*?)\)/g;
+            // 3. Détecter les hooks complets : const nom = useCallback(() => { ... }, [])
+            const hookRegex = /const\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(useCallback|useMemo|useEffect)\(/g;
             while ((match = hookRegex.exec(code)) !== null) {
                 const name = match[1];
-                const content = match[2] || '';
-                if (!components.some(c => c.name === name)) {
-                    components.push({ name, content, fullMatch: match[0] });
+                const fullBlock = extractFullBlock(code, match.index);
+                if (fullBlock && !components.some(c => c.name === name)) {
+                    components.push({ name, fullBlock, start: match.index });
                 }
             }
 
-            // 4. Détecter les fonctions fléchées (const nom = () => { ... })
+            // 4. Détecter les fonctions fléchées avec paramètres : const nom = (params) => { ... }
             const arrowRegex = /const\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(?:\([^)]*\)\s*=>\s*{([\s\S]*?)}|\(\)\s*=>\s*{([\s\S]*?)})/g;
             while ((match = arrowRegex.exec(code)) !== null) {
                 const name = match[1];
-                const content = match[2] || match[3] || '';
-                if (!components.some(c => c.name === name)) {
-                    components.push({ name, content, fullMatch: match[0] });
+                const fullBlock = extractFullBlock(code, match.index);
+                if (fullBlock && !components.some(c => c.name === name)) {
+                    components.push({ name, fullBlock, start: match.index });
                 }
             }
 
-            log(`🏷️ ${components.length} sections détectées`, 'tag');
+            // Trier par position (du plus petit au plus grand)
+            components.sort((a, b) => a.start - b.start);
 
-            // 5. Trier par position (du plus petit au plus grand)
-            components.sort((a, b) => {
-                const idxA = code.indexOf(a.fullMatch);
-                const idxB = code.indexOf(b.fullMatch);
-                return idxA - idxB;
-            });
-
-            // 6. Injecter les balises (en partant de la fin pour ne pas décaler les index)
+            // Injecter les balises (en partant de la fin)
             let finalCode = code;
             const inserted = [];
             for (let i = components.length - 1; i >= 0; i--) {
@@ -296,14 +295,13 @@
                     log(`🏷️ Section "${comp.name}" déjà balisée, ignorée`, 'tag');
                     continue;
                 }
-                // Préparer la balise
-                const taggedSection = `// ==SECTION: ${comp.name}==\n${comp.fullMatch}\n// ==END==`;
-                finalCode = finalCode.replace(comp.fullMatch, taggedSection);
+                const taggedSection = `// ==SECTION: ${comp.name}==\n${comp.fullBlock}\n// ==END==`;
+                finalCode = finalCode.replace(comp.fullBlock, taggedSection);
                 inserted.push(comp.name);
                 log(`🏷️ Balise ajoutée pour "${comp.name}"`, 'tag');
             }
 
-            // 7. Mettre à jour le mapping
+            // Mettre à jour le mapping
             const newMapping = {};
             const sections = extractSections(finalCode);
             sections.forEach(s => {
@@ -325,7 +323,45 @@
             };
         }
 
-        // === APPLIQUER LE BALISAGE AUTO ===
+        // === EXTRAIRE UN BLOC COMPLET (avec accolades) ===
+        function extractFullBlock(code, startIndex) {
+            // Trouver la première accolade ouvrante
+            let braceIndex = code.indexOf('{', startIndex);
+            if (braceIndex === -1) return null;
+
+            let depth = 0;
+            let i = braceIndex;
+            while (i < code.length) {
+                if (code[i] === '{') depth++;
+                else if (code[i] === '}') {
+                    depth--;
+                    if (depth === 0) {
+                        // On a trouvé la fin du bloc
+                        // On remonte jusqu'au début de la déclaration
+                        let declStart = startIndex;
+                        // On prend tout depuis le début de la ligne
+                        while (declStart > 0 && code[declStart - 1] !== '\n') declStart--;
+                        const fullBlock = code.substring(declStart, i + 1);
+                        return fullBlock;
+                    }
+                }
+                i++;
+            }
+            return null;
+        }
+
+        // === NETTOYER LES BALISES (si elles sont mal placées) ===
+        function cleanTags(code) {
+            // Supprime toutes les balises SECTION/END
+            let cleaned = code.replace(/\/\/\s*==SECTION:.*==\n?/g, '');
+            cleaned = cleaned.replace(/\/\/\s*==END==\n?/g, '');
+            // Supprime les lignes vides en trop
+            cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+            log('🧹 Balises supprimées', 'success');
+            return cleaned;
+        }
+
+        // === APPLIQUER LE BALISAGE PROPRE ===
         function applyAutoTag() {
             const code = fullCodeInput.value.trim();
             if (!code) {
@@ -334,22 +370,45 @@
             }
 
             if (hasTags(code)) {
-                if (!confirm('⚠️ Le code est déjà balisé. Voulez-vous le re-baliser ?')) {
+                if (!confirm('⚠️ Le code est déjà balisé. Voulez-vous le re-baliser proprement ?')) {
                     return;
                 }
             }
 
-            const result = autoTagCode(code);
+            const result = autoTagCodePropre(code);
             if (result) {
                 fullCode = result.code;
                 fullCodeInput.value = result.code;
                 updateFinalCodeDisplay();
                 updateCodeStats();
-                tagStatus.textContent = '✅ Balisé (auto)';
+                tagStatus.textContent = '✅ Balisé (propre)';
                 tagStatus.className = 'text-xs text-green-400';
-                log(`🏷️ ${result.added.length} sections balisées automatiquement`, 'success');
+                log(`🏷️ ${result.added.length} sections balisées proprement`, 'success');
                 patchesContainer.innerHTML = `<div class="text-gray-500 italic">✅ Code balisé ! ${result.added.length} sections détectées. Envoie une instruction pour patcher.</div>`;
             }
+        }
+
+        // === NETTOYER LES BALISES ===
+        function applyCleanTags() {
+            const code = fullCodeInput.value.trim();
+            if (!code) {
+                alert('📄 Colle du code d\'abord.');
+                return;
+            }
+            if (!hasTags(code)) {
+                alert('⚠️ Aucune balise à nettoyer.');
+                return;
+            }
+            if (!confirm('🧹 Supprimer toutes les balises du code ?')) return;
+            const cleaned = cleanTags(code);
+            fullCode = cleaned;
+            fullCodeInput.value = cleaned;
+            updateFinalCodeDisplay();
+            updateCodeStats();
+            tagStatus.textContent = '⚪ Non balisé';
+            tagStatus.className = 'text-xs text-gray-400';
+            log('🧹 Balises nettoyées', 'success');
+            patchesContainer.innerHTML = '<div class="text-gray-500 italic">🧹 Code nettoyé. Clique sur "Baliser Propre" pour le re-baliser.</div>';
         }
 
         // === ENVOI DE LA REQUÊTE ===
@@ -375,19 +434,18 @@
                 return;
             }
 
-            // Vérifier si le code est balisé
             if (!hasTags(code)) {
-                log('⚠️ Code non balisé. Balisage automatique en cours...', 'warning');
-                const result = autoTagCode(code);
+                log('⚠️ Code non balisé. Balisage propre automatique en cours...', 'warning');
+                const result = autoTagCodePropre(code);
                 if (result) {
                     code = result.code;
                     fullCodeInput.value = code;
                     fullCode = code;
                     updateFinalCodeDisplay();
                     updateCodeStats();
-                    tagStatus.textContent = '✅ Balisé (auto)';
+                    tagStatus.textContent = '✅ Balisé (propre)';
                     tagStatus.className = 'text-xs text-green-400';
-                    log('🏷️ Balisage automatique effectué avant l\'envoi', 'tag');
+                    log('🏷️ Balisage propre effectué avant l\'envoi', 'tag');
                 }
             }
 
@@ -503,9 +561,8 @@
                             this.textContent = '✅ Appliqué';
                             this.disabled = true;
                             this.className = 'bg-green-500/20 text-green-400 px-2 py-1 rounded-lg text-xs';
-                            // Mettre à jour le statut des tags
                             if (hasTags(fullCode)) {
-                                tagStatus.textContent = '✅ Balisé';
+                                tagStatus.textContent = '✅ Balisé (propre)';
                                 tagStatus.className = 'text-xs text-green-400';
                             }
                         } else {
@@ -537,7 +594,7 @@
                         b.className = 'bg-green-500/20 text-green-400 px-2 py-1 rounded-lg text-xs';
                     });
                     if (hasTags(fullCode)) {
-                        tagStatus.textContent = '✅ Balisé';
+                        tagStatus.textContent = '✅ Balisé (propre)';
                         tagStatus.className = 'text-xs text-green-400';
                     }
                 });
@@ -565,7 +622,6 @@
                 updateFinalCodeDisplay();
                 updateCodeStats();
                 finalCodeDisplay.textContent = fullCode;
-                // Mettre à jour le mapping
                 delete sectionMapping[section];
                 localStorage.setItem('myagent_section_mapping', JSON.stringify(sectionMapping));
                 return true;
@@ -587,7 +643,6 @@
                 const newSection = `\n// ==SECTION: ${section}==\n${cleanContent}\n// ==END==`;
                 fullCode += newSection;
                 log(`Section "${section}" créée (nouvelle)`, 'success');
-                // Ajouter au mapping
                 sectionMapping[section] = {
                     originalName: section,
                     type: 'patch-created',
@@ -667,7 +722,6 @@
             fullCode = fullCodeInput.value;
             updateFinalCodeDisplay();
             updateCodeStats();
-            // Vérifier si le code est balisé
             if (hasTags(fullCode)) {
                 tagStatus.textContent = '✅ Balisé';
                 tagStatus.className = 'text-xs text-green-400';
@@ -682,8 +736,9 @@
             if (e.key === 'Enter') sendRequest();
         });
 
-        // === BALISAGE AUTO ===
+        // === BALISAGE PROPRE ===
         autoTagBtn.addEventListener('click', applyAutoTag);
+        cleanTagsBtn.addEventListener('click', applyCleanTags);
 
         // === EXEMPLE ===
         loadExampleBtn.addEventListener('click', () => {
@@ -727,7 +782,7 @@
         updateFinalCodeDisplay();
         updateCodeStats();
         log('📥 Exemple de code chargé', 'success');
-        patchesContainer.innerHTML = '<div class="text-gray-500 italic">✅ Code exemple chargé. Clique sur "Baliser Auto" ou envoie une instruction.</div>';
+        patchesContainer.innerHTML = '<div class="text-gray-500 italic">✅ Code exemple chargé. Clique sur "Baliser Propre" ou envoie une instruction.</div>';
         if (hasTags(example)) {
             tagStatus.textContent = '✅ Balisé';
             tagStatus.className = 'text-xs text-green-400';
@@ -779,12 +834,12 @@
         loadKey();
         loadFullCode();
         updateCodeStats();
-        log('🚀 MyAgent v4 prêt - Balisage Automatique', 'success');
+        log('🚀 MyAgent v4.1 prêt - Balisage Propre', 'success');
         if (fullCode) {
             if (hasTags(fullCode)) {
-                patchesContainer.innerHTML = '<div class="text-gray-500 italic">✅ Code balisé. Envoie une instruction pour patcher.</div>';
+                patchesContainer.innerHTML = '<div class="text-gray-500 italic">✅ Code balisé proprement. Envoie une instruction pour patcher.</div>';
             } else {
-                patchesContainer.innerHTML = '<div class="text-gray-500 italic">📄 Code non balisé. Clique sur "Baliser Auto" ou envoie une instruction pour le faire automatiquement.</div>';
+                patchesContainer.innerHTML = '<div class="text-gray-500 italic">📄 Code non balisé. Clique sur "Baliser Propre" ou envoie une instruction pour le faire automatiquement.</div>';
             }
         }
     })();
