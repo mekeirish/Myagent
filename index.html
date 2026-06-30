@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>🧠 MyAgent — DeepSeek Modif Code</title>
     <script src="https://cdn.tailwindcss.com"></script>
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#4b6cb7">
-<link rel="apple-touch-icon" href="icon.png"></head>
+</head>
 
 <body class="bg-[#0d1117] text-gray-200 font-sans antialiased min-h-screen flex items-center justify-center p-4">
 
@@ -140,6 +137,7 @@
                 keyStatus.className = 'text-xs text-gray-400 flex items-center gap-1';
                 balanceDisplay.textContent = '🔑 Aucune clé';
                 balanceDisplay.className = 'text-sm font-mono text-gray-500 mt-1';
+                balanceDetails.classList.add('hidden');
             }
         }
 
@@ -157,7 +155,7 @@
             alert('🔐 Clé sauvegardée avec succès ! Elle reste sur ton appareil.');
         }
 
-        // === Récupérer le solde ===
+        // === Récupérer le solde (endpoint officiel) ===
         async function fetchBalance(apiKey) {
             if (!apiKey) {
                 apiKey = localStorage.getItem('myagent_api_key');
@@ -175,7 +173,7 @@
             balanceDetails.classList.add('hidden');
 
             try {
-                const response = await fetch('https://api.deepseek.com/user/balance', {
+                const response = await fetch('https://api.deepseek.com/dashboard/billing/overview', {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${apiKey}`,
@@ -185,32 +183,55 @@
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Erreur HTTP ${response.status}: ${errorText}`);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
                 }
 
                 const data = await response.json();
+                console.log('Réponse brute du solde :', data);
 
-                if (data && data.balance_infos && data.balance_infos.length > 0) {
-                    const info = data.balance_infos[0];
-                    const total = parseFloat(info.total_balance || 0);
-                    const topped = parseFloat(info.topped_up_balance || 0);
-                    const granted = parseFloat(info.granted_balance || 0);
+                // Adapté à la structure de l'API DeepSeek
+                if (data && data.total_balance !== undefined) {
+                    const total = parseFloat(data.total_balance || 0);
+                    const topped = parseFloat(data.topped_up_balance || 0);
+                    const granted = parseFloat(data.granted_balance || 0);
+                    const currency = data.currency || 'CNY';
 
                     // Affichage principal
-                    balanceDisplay.textContent = `${total.toFixed(2)} ${info.currency || 'CNY'}`;
+                    balanceDisplay.textContent = `${total.toFixed(2)} ${currency}`;
                     balanceDisplay.className = 'text-sm font-mono font-semibold text-green-400 mt-1';
 
                     // Détails
                     toppedUpBalance.textContent = topped.toFixed(2);
                     grantedBalance.textContent = granted.toFixed(2);
                     balanceDetails.classList.remove('hidden');
+                } else if (data && data.balance_infos && data.balance_infos.length > 0) {
+                    // Fallback au cas où l'ancienne structure persiste
+                    const info = data.balance_infos[0];
+                    const total = parseFloat(info.total_balance || 0);
+                    const topped = parseFloat(info.topped_up_balance || 0);
+                    const granted = parseFloat(info.granted_balance || 0);
+                    const currency = info.currency || 'CNY';
+
+                    balanceDisplay.textContent = `${total.toFixed(2)} ${currency}`;
+                    balanceDisplay.className = 'text-sm font-mono font-semibold text-green-400 mt-1';
+
+                    toppedUpBalance.textContent = topped.toFixed(2);
+                    grantedBalance.textContent = granted.toFixed(2);
+                    balanceDetails.classList.remove('hidden');
                 } else {
-                    balanceDisplay.textContent = '❌ Format inattendu';
-                    balanceDisplay.className = 'text-sm font-mono text-red-400 mt-1';
+                    // Affichage brut en cas de format non reconnu
+                    balanceDisplay.textContent = '⚠️ Format inattendu';
+                    balanceDisplay.className = 'text-sm font-mono text-yellow-400 mt-1';
+                    console.warn('Structure inattendue :', data);
+                    // On tente d'afficher le premier champ numérique trouvé
+                    const firstNumber = Object.values(data).find(v => typeof v === 'number' && v > 0);
+                    if (firstNumber) {
+                        balanceDisplay.textContent = `${firstNumber}`;
+                    }
                 }
             } catch (err) {
                 console.error('Erreur solde:', err);
-                balanceDisplay.textContent = '❌ Erreur';
+                balanceDisplay.textContent = `❌ ${err.message}`;
                 balanceDisplay.className = 'text-sm font-mono text-red-400 mt-1';
                 balanceDetails.classList.add('hidden');
             } finally {
@@ -267,7 +288,7 @@
                 localStorage.setItem('myagent_last_code', code);
                 localStorage.setItem('myagent_last_instructions', instructions);
 
-                // Rafraîchir le solde après une requête (optionnel)
+                // Rafraîchir le solde après une requête
                 fetchBalance(apiKey);
 
             } catch (err) {
@@ -316,7 +337,5 @@
     })();
 </script>
 
-
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 </body>
 </html>
