@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
-    <title>🧠 Braincode</title>
+    <title>🧠 Braincode v1.2.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" />
     <style>
@@ -14,17 +14,29 @@
         body { background: #050505; touch-action: pan-y; }
         .glass { background: rgba(18, 18, 18, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); }
         .card { background: #121212; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
-        .accent-blue { color: #3b82f6; }
-        .accent-green { color: #10b981; }
         .btn-press:active { transform: scale(0.95); }
         .transition-app { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        .version-badge { font-size: 9px; background: rgba(59,130,246,0.2); color: #60a5fa; padding: 2px 8px; border-radius: 99px; border: 1px solid rgba(59,130,246,0.2); }
+        .diff-preview { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 12px; margin-top: 8px; max-height: 300px; overflow: auto; }
+        .diff-old { color: #f85149; white-space: pre-wrap; font-family: monospace; font-size: 12px; }
+        .diff-new { color: #3fb950; white-space: pre-wrap; font-family: monospace; font-size: 12px; }
+        .patch-flash { animation: flash-green 0.8s ease; }
+        @keyframes flash-green { 0% { background: rgba(16, 185, 129, 0.4); } 100% { background: transparent; } }
+        .shortcut-hint { font-size: 9px; color: rgba(255,255,255,0.15); letter-spacing: 0.5px; }
+        .typing-cursor { animation: blink 1s step-end infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .progress-bar { height: 2px; background: rgba(59,130,246,0.2); border-radius: 99px; overflow: hidden; }
+        .progress-bar-inner { height: 100%; background: #3b82f6; width: 0%; transition: width 0.3s ease; }
+        .signature { font-size: 9px; color: rgba(255,255,255,0.08); letter-spacing: 0.5px; text-align: center; padding: 12px 0 4px; border-top: 1px solid rgba(255,255,255,0.03); margin-top: 8px; }
+        /* Plein écran : l'iframe s'adapte */
+        .sandbox-fullscreen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; background: #050505; padding: 12px; border-radius: 0; }
+        .sandbox-fullscreen iframe { width: 100% !important; height: 100% !important; border-radius: 12px; }
     </style>
 </head>
 
 <body class="min-h-screen text-gray-200 antialiased pb-24 safe-bottom">
 
-    <!-- ====== MAIN CONTAINER ====== -->
     <main class="max-w-lg mx-auto px-4 pt-4 pb-6 space-y-4">
 
         <!-- EN-TÊTE -->
@@ -32,7 +44,7 @@
             <div class="flex items-center gap-2">
                 <span class="text-2xl">🧠</span>
                 <h1 class="text-xl font-bold text-white tracking-tight">Braincode</h1>
-                <span class="text-[10px] font-mono bg-white/10 text-white/50 px-2 py-0.5 rounded-full border border-white/5">v1.0</span>
+                <span class="version-badge">v1.2.2</span>
             </div>
             <div class="flex items-center gap-2 text-xs text-white/40">
                 <span id="balanceDisplay" class="font-mono">💰 ⏳</span>
@@ -40,7 +52,7 @@
             </div>
         </header>
 
-        <!-- CARTE : Clé API -->
+        <!-- CARTE : Clé API + Provider -->
         <section class="card rounded-3xl p-4 space-y-2">
             <label class="text-xs font-medium text-white/40 uppercase tracking-wider">🔑 Clé API</label>
             <div class="flex gap-2">
@@ -48,7 +60,14 @@
                 class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-app" />
                 <button id="saveKeyBtn" class="bg-blue-600 hover:bg-blue-500 active:scale-95 transition-app px-5 py-3 rounded-xl text-sm font-medium text-white shadow-lg shadow-blue-600/20">💾</button>
             </div>
-            <div id="keyStatus" class="text-xs text-white/30">⚪ Aucune clé</div>
+            <div class="flex gap-2 items-center">
+                <select id="providerSelect" class="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-app">
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic</option>
+                </select>
+                <div id="keyStatus" class="text-xs text-white/30">⚪ Aucune clé</div>
+            </div>
         </section>
 
         <!-- CARTE : Code Source -->
@@ -68,14 +87,20 @@
             </div>
         </section>
 
-        <!-- CARTE : Instructions -->
+        <!-- CARTE : Instructions + Undo -->
         <section class="card rounded-3xl p-4 space-y-2">
             <div class="flex items-center justify-between">
                 <label class="text-xs font-medium text-white/40 uppercase tracking-wider">📝 Instructions</label>
-                <button id="toggleBatchBtn" class="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full text-white/50 transition-app">📋 Batch</button>
+                <div class="flex gap-2">
+                    <button id="undoBtn" class="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full text-white/50 transition-app disabled:opacity-30 disabled:pointer-events-none" title="Ctrl+Z">↺ Undo</button>
+                    <button id="toggleBatchBtn" class="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full text-white/50 transition-app">📋 Batch</button>
+                </div>
             </div>
             <input type="text" id="instructionsInput" placeholder="Ex: Change la couleur du bouton en bleu"
             class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-app" />
+            <div class="flex justify-end">
+                <span class="shortcut-hint">⌨️ Ctrl+Enter → Patcher · Ctrl+B → Baliser · Ctrl+Z → Undo</span>
+            </div>
             <div id="batchContainer" class="hidden space-y-2">
                 <textarea id="batchInput" rows="3" placeholder="Une instruction par ligne..."
                 class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 font-mono resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-app"></textarea>
@@ -92,6 +117,10 @@
             <div id="patchesContainer" class="text-sm text-white/40 italic min-h-[40px]">
                 En attente d'instructions...
             </div>
+            <div class="progress-bar mt-2">
+                <div class="progress-bar-inner" id="progressBar"></div>
+            </div>
+            <div id="streamDisplay" class="bg-black/30 rounded-xl p-3 mt-2 text-xs text-gray-300 font-mono whitespace-pre-wrap max-h-32 overflow-auto hidden"></div>
         </section>
 
         <!-- CARTE : Code Final -->
@@ -110,16 +139,21 @@
         </div>
     </section>
 
-    <!-- CARTE : Sandbox -->
-    <section class="card rounded-3xl p-4 space-y-2">
+    <!-- CARTE : Sandbox avec bouton plein écran -->
+    <section class="card rounded-3xl p-4 space-y-2" id="sandboxCard">
         <div class="flex items-center justify-between">
             <span class="text-xs font-medium text-white/40 uppercase tracking-wider">🏖️ Aperçu en direct</span>
-            <button id="refreshSandboxBtn" class="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full text-white/50 transition-app">↻</button>
+            <div class="flex gap-2">
+                <button id="fullscreenBtn" class="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full text-white/50 transition-app" title="Plein écran">🖥️</button>
+                <button id="refreshSandboxBtn" class="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full text-white/50 transition-app">↻</button>
+            </div>
         </div>
-        <iframe id="sandboxIframe" class="w-full bg-white/5 rounded-xl border border-white/10" style="height: 200px; resize: vertical;"></iframe>
+        <div id="sandboxWrapper" class="relative">
+            <iframe id="sandboxIframe" class="w-full bg-white/5 rounded-xl border border-white/10" style="height: 200px; resize: vertical;"></iframe>
+        </div>
     </section>
 
-    <!-- CARTE : Console (rétractable) -->
+    <!-- CARTE : Console -->
     <section class="card rounded-3xl p-4 space-y-2">
         <div class="flex items-center justify-between">
             <span class="text-xs font-medium text-white/40 uppercase tracking-wider">📋 Console</span>
@@ -133,6 +167,9 @@
         ⏳ Console prête...
     </div>
 </section>
+
+<!-- Signature -->
+<div class="signature">Made by Laiche Brahim 2026 Paris</div>
 
 </main>
 
@@ -148,13 +185,60 @@
     </div>
 </nav>
 
-<!-- ====== SCRIPTS ====== -->
+<!-- ====== MODALES (inchangées) ====== -->
+<div id="historyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4">
+    <div class="card rounded-3xl p-6 max-w-lg w-full max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white">📜 Historique</h2>
+            <button id="closeHistoryBtn" class="text-white/50 hover:text-white/80 transition-app">✕</button>
+        </div>
+        <input type="text" id="historySearch" placeholder="🔍 Chercher dans l'historique..."
+        class="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-app mb-3" />
+        <div id="historyList" class="flex-1 overflow-auto space-y-2 text-sm">
+            <div class="text-white/30 italic">Aucun historique</div>
+        </div>
+    </div>
+</div>
+
+<div id="diffModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4">
+    <div class="card rounded-3xl p-6 max-w-lg w-full max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white">🔍 Aperçu du patch</h2>
+            <button id="closeDiffBtn" class="text-white/50 hover:text-white/80 transition-app">✕</button>
+        </div>
+        <div id="diffContent" class="flex-1 overflow-auto">
+            <div class="diff-preview">
+                <div class="text-xs text-red-400 mb-1">❌ Ancien contenu</div>
+                <div class="diff-old" id="diffOld"></div>
+                <div class="text-xs text-green-400 mt-3 mb-1">✅ Nouveau contenu</div>
+                <div class="diff-new" id="diffNew"></div>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-4">
+            <button id="diffApplyBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-app py-2.5 rounded-xl text-sm font-medium text-white">🔧 Appliquer</button>
+            <button id="diffCancelBtn" class="flex-1 bg-white/5 hover:bg-white/10 active:scale-95 transition-app py-2.5 rounded-xl text-sm font-medium text-white/70">Annuler</button>
+        </div>
+    </div>
+</div>
+
+<div id="explainModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4">
+    <div class="card rounded-3xl p-6 max-w-lg w-full max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white">📖 Explication</h2>
+            <button id="closeExplainBtn" class="text-white/50 hover:text-white/80 transition-app">✕</button>
+        </div>
+        <div id="explainContent" class="flex-1 overflow-auto text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
+            ⏳ Chargement...
+        </div>
+    </div>
+</div>
+
 <script>
 (function() {
     'use strict';
 
     // ============================================
-    // TOUS LES IDs SONT CONSERVÉS — LOGIQUE V6.0
+    // BRAINCODE v1.2.2 — Plein écran + Signature
     // ============================================
 
     // === DOM REFS ===
@@ -177,6 +261,7 @@
     const copyFinalBtn = $('copyFinalBtn');
     const exportFinalBtn = $('exportFinalBtn');
     const showHistoryBtn = $('showHistoryBtn');
+    const undoBtn = $('undoBtn');
     const codeStats = $('codeStats');
     const tagStatus = $('tagStatus');
     const loadExampleBtn = $('loadExampleBtn');
@@ -186,13 +271,118 @@
     const clearConsoleBtn = $('clearConsoleBtn');
     const copyConsoleBtn = $('copyConsoleBtn');
     const sandboxIframe = $('sandboxIframe');
+    const sandboxWrapper = $('sandboxWrapper');
     const refreshSandboxBtn = $('refreshSandboxBtn');
+    const fullscreenBtn = $('fullscreenBtn');
+    const providerSelect = $('providerSelect');
+    const historyModal = $('historyModal');
+    const closeHistoryBtn = $('closeHistoryBtn');
+    const historySearch = $('historySearch');
+    const historyList = $('historyList');
+    const diffModal = $('diffModal');
+    const closeDiffBtn = $('closeDiffBtn');
+    const diffOld = $('diffOld');
+    const diffNew = $('diffNew');
+    const diffApplyBtn = $('diffApplyBtn');
+    const diffCancelBtn = $('diffCancelBtn');
+    const explainModal = $('explainModal');
+    const closeExplainBtn = $('closeExplainBtn');
+    const explainContent = $('explainContent');
+    const progressBar = $('progressBar');
+    const streamDisplay = $('streamDisplay');
+
+    // === PLEIN ÉCRAN ===
+    let isFullscreen = false;
+
+    function toggleFullscreen() {
+        const wrapper = sandboxWrapper;
+        if (!document.fullscreenElement) {
+            // Passer en plein écran
+            if (wrapper.requestFullscreen) {
+                wrapper.requestFullscreen();
+            } else if (wrapper.webkitRequestFullscreen) {
+                wrapper.webkitRequestFullscreen();
+            } else if (wrapper.msRequestFullscreen) {
+                wrapper.msRequestFullscreen();
+            }
+            // Ajouter la classe pour l'iframe
+            wrapper.classList.add('sandbox-fullscreen');
+            isFullscreen = true;
+            fullscreenBtn.textContent = '⛶';
+            fullscreenBtn.title = 'Quitter le plein écran';
+            // Ajuster l'iframe
+            sandboxIframe.style.height = '100%';
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+            wrapper.classList.remove('sandbox-fullscreen');
+            isFullscreen = false;
+            fullscreenBtn.textContent = '🖥️';
+            fullscreenBtn.title = 'Plein écran';
+            sandboxIframe.style.height = '200px';
+        }
+    }
+
+    // Écouter les changements de plein écran (pour le bouton)
+    document.addEventListener('fullscreenchange', function() {
+        if (!document.fullscreenElement) {
+            sandboxWrapper.classList.remove('sandbox-fullscreen');
+            isFullscreen = false;
+            fullscreenBtn.textContent = '🖥️';
+            fullscreenBtn.title = 'Plein écran';
+            sandboxIframe.style.height = '200px';
+        }
+    });
+    document.addEventListener('webkitfullscreenchange', function() {
+        if (!document.webkitFullscreenElement) {
+            sandboxWrapper.classList.remove('sandbox-fullscreen');
+            isFullscreen = false;
+            fullscreenBtn.textContent = '🖥️';
+            fullscreenBtn.title = 'Plein écran';
+            sandboxIframe.style.height = '200px';
+        }
+    });
+
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
 
     // === ÉTAT ===
     let fullCode = localStorage.getItem('braincode_full_code') || '';
     let sectionMapping = JSON.parse(localStorage.getItem('braincode_section_mapping') || '{}');
     let patchHistory = JSON.parse(localStorage.getItem('braincode_patch_history') || '[]');
     let isBatchMode = false;
+    let pendingPatch = null;
+
+    // === UNDO SYSTEM ===
+    let undoStack = JSON.parse(localStorage.getItem('braincode_undo_stack') || '[]');
+    const MAX_UNDO = 10;
+
+    function pushUndo(code) {
+        undoStack.push(code);
+        if (undoStack.length > MAX_UNDO) undoStack.shift();
+        localStorage.setItem('braincode_undo_stack', JSON.stringify(undoStack));
+        updateUndoButton();
+    }
+
+    function popUndo() {
+        if (undoStack.length === 0) return null;
+        var previous = undoStack.pop();
+        localStorage.setItem('braincode_undo_stack', JSON.stringify(undoStack));
+        updateUndoButton();
+        return previous;
+    }
+
+    function updateUndoButton() {
+        undoBtn.disabled = undoStack.length === 0;
+        undoBtn.className = 'text-xs px-3 py-1.5 rounded-full transition-app ' +
+            (undoStack.length === 0 ?
+                'bg-white/5 text-white/20 cursor-not-allowed' :
+                'bg-white/5 hover:bg-white/10 text-white/50');
+    }
 
     // === CONSOLE ===
     function log(message, type) {
@@ -228,6 +418,7 @@
             updateTagStatus();
             updateSandbox();
         }
+        updateUndoButton();
     }
 
     function updateFinalCodeDisplay() {
@@ -275,45 +466,169 @@
     function updateSandbox() {
         try {
             var htmlContent = fullCode || '<html><body><p class="text-white/40 p-4">⏳ Aucun code</p></body></html>';
-            var blob = new Blob([htmlContent], { type: 'text/html' });
-            var url = URL.createObjectURL(blob);
-            sandboxIframe.src = url;
-            setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+            sandboxIframe.srcdoc = htmlContent;
         } catch (e) {
             log('❌ Erreur sandbox: ' + e.message, 'error');
         }
     }
     refreshSandboxBtn.addEventListener('click', updateSandbox);
 
-    // === HISTORIQUE ===
-    function addToHistory(patch, instruction) {
-        var entry = {
-            id: Date.now(),
-            timestamp: new Date().toISOString(),
-            section: patch.section,
-            oldContent: patch.oldContent || '',
-            newContent: patch.newContent,
-            instruction: instruction || '',
-            fullCode: fullCode
-        };
-        patchHistory.push(entry);
-        if (patchHistory.length > 50) patchHistory.shift();
-        localStorage.setItem('braincode_patch_history', JSON.stringify(patchHistory));
+    // === HISTORIQUE AVEC RECHERCHE ===
+    function renderHistory(filter) {
+        filter = filter || '';
+        var filtered = patchHistory.filter(function(entry) {
+            return entry.section.toLowerCase().includes(filter.toLowerCase()) ||
+                   (entry.instruction && entry.instruction.toLowerCase().includes(filter.toLowerCase()));
+        });
+        if (filtered.length === 0) {
+            historyList.innerHTML = '<div class="text-white/30 italic">Aucun historique trouvé</div>';
+            return;
+        }
+        var html = '';
+        filtered.slice().reverse().forEach(function(entry) {
+            var date = new Date(entry.timestamp).toLocaleString();
+            html += '<div class="bg-white/5 p-3 rounded-xl border border-white/5">';
+            html += '<div class="flex items-center justify-between">';
+            html += '<span class="text-xs font-mono text-cyan-400">📌 ' + entry.section + '</span>';
+            html += '<span class="text-[10px] text-white/30">' + date + '</span>';
+            html += '</div>';
+            if (entry.instruction) {
+                html += '<div class="text-xs text-white/40 mt-1">📝 ' + entry.instruction + '</div>';
+            }
+            html += '<div class="text-[10px] text-white/20 mt-1">' + (entry.newContent || 'Suppression').substring(0, 100) + '...</div>';
+            html += '</div>';
+        });
+        historyList.innerHTML = html;
     }
 
     function showHistory() {
-        if (patchHistory.length === 0) { alert('📜 Aucun historique.'); return; }
-        var msg = '📜 HISTORIQUE\n' + '═'.repeat(40) + '\n';
-        patchHistory.slice().reverse().forEach(function(entry, i) {
-            var date = new Date(entry.timestamp).toLocaleString();
-            msg += '[' + (i+1) + '] ' + date + '\n';
-            msg += '📌 Section: ' + entry.section + '\n';
-            msg += '📝 Instruction: ' + (entry.instruction || 'N/A') + '\n';
-            msg += '─'.repeat(40) + '\n';
-        });
-        alert(msg);
+        historyModal.classList.remove('hidden');
+        renderHistory('');
     }
+
+    closeHistoryBtn.addEventListener('click', function() {
+        historyModal.classList.add('hidden');
+    });
+    historyModal.addEventListener('click', function(e) {
+        if (e.target === historyModal) historyModal.classList.add('hidden');
+    });
+    historySearch.addEventListener('input', function() {
+        renderHistory(this.value);
+    });
+
     showHistoryBtn.addEventListener('click', showHistory);
+
+    // === DIFF PREVIEW ===
+    function showDiff(oldContent, newContent, patch, instruction) {
+        diffOld.textContent = oldContent || '⚠️ Suppression';
+        diffNew.textContent = newContent || '⚠️ Suppression';
+        pendingPatch = { patch: patch, instruction: instruction };
+        diffModal.classList.remove('hidden');
+    }
+
+    closeDiffBtn.addEventListener('click', function() {
+        diffModal.classList.add('hidden');
+        pendingPatch = null;
+    });
+    diffCancelBtn.addEventListener('click', function() {
+        diffModal.classList.add('hidden');
+        pendingPatch = null;
+    });
+    diffModal.addEventListener('click', function(e) {
+        if (e.target === diffModal) {
+            diffModal.classList.add('hidden');
+            pendingPatch = null;
+        }
+    });
+    diffApplyBtn.addEventListener('click', function() {
+        if (pendingPatch) {
+            var result = applyPatch(pendingPatch.patch, pendingPatch.instruction);
+            if (result) {
+                log('✅ Patch "' + pendingPatch.patch.section + '" appliqué', 'success');
+                var flashDiv = document.createElement('div');
+                flashDiv.className = 'patch-flash';
+                flashDiv.style.position = 'absolute';
+                flashDiv.style.top = '0';
+                flashDiv.style.left = '0';
+                flashDiv.style.right = '0';
+                flashDiv.style.bottom = '0';
+                flashDiv.style.pointerEvents = 'none';
+                sandboxIframe.contentDocument?.body?.appendChild(flashDiv);
+                setTimeout(function() {
+                    flashDiv.remove();
+                }, 1000);
+            }
+            diffModal.classList.add('hidden');
+            pendingPatch = null;
+        }
+    });
+
+    // === EXPLAIN SECTION ===
+    async function explainSection(sectionName) {
+        var apiKey = localStorage.getItem('braincode_api_key');
+        if (!apiKey) {
+            alert('⚠️ Sauvegarde ta clé API.');
+            return;
+        }
+
+        explainModal.classList.remove('hidden');
+        explainContent.textContent = '⏳ Génération de l\'explication...';
+
+        var sections = extractSections(fullCode);
+        var section = sections.find(function(s) { return s.name === sectionName; });
+        if (!section) {
+            explainContent.textContent = '❌ Section non trouvée.';
+            return;
+        }
+
+        var code = fullCodeInput.value.trim();
+        var config = getProviderConfig();
+
+        try {
+            var response = await fetch(config.url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': config.authPrefix + apiKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: config.model,
+                    messages: [{
+                        role: 'system',
+                        content: 'Tu es un expert en code. Explique de manière claire et concise ce que fait ce bloc de code, quel est son rôle, et comment il s\'intègre dans le projet. Réponds en français.'
+                    }, {
+                        role: 'user',
+                        content: 'Voici le code de la section "' + sectionName + '" :\n\n' + section.content + '\n\nExplique-moi ce que fait ce code.'
+                    }],
+                    stream: false
+                })
+            });
+
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+
+            var data = await response.json();
+            var explanation;
+            if (providerSelect.value === 'anthropic') {
+                explanation = data.content[0].text;
+            } else {
+                explanation = data.choices[0].message.content;
+            }
+
+            explainContent.textContent = explanation;
+            log('📖 Explication générée pour "' + sectionName + '"', 'success');
+
+        } catch (err) {
+            explainContent.textContent = '❌ Erreur : ' + err.message;
+            log('❌ Erreur explication: ' + err.message, 'error');
+        }
+    }
+
+    closeExplainBtn.addEventListener('click', function() {
+        explainModal.classList.add('hidden');
+    });
+    explainModal.addEventListener('click', function(e) {
+        if (e.target === explainModal) explainModal.classList.add('hidden');
+    });
 
     // === APPLICATION D'UN PATCH ===
     function applyPatch(patch, instruction) {
@@ -321,6 +636,8 @@
         var section = patch.section;
         var newContent = patch.newContent;
         log('Application du patch sur "' + section + '"...', 'debug');
+
+        pushUndo(fullCode);
 
         var oldContent = '';
         var regex = new RegExp('<!--\\s*SECTION:\\s*' + escapeRegex(section) + '\\s*-->([\\s\\S]*?)<!--\\s*\\/SECTION:\\s*' + escapeRegex(section) + '\\s*-->', 'gi');
@@ -375,14 +692,58 @@
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
+    function addToHistory(patch, instruction) {
+        var entry = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            section: patch.section,
+            oldContent: patch.oldContent || '',
+            newContent: patch.newContent,
+            instruction: instruction || '',
+            fullCode: fullCode
+        };
+        patchHistory.push(entry);
+        if (patchHistory.length > 50) patchHistory.shift();
+        localStorage.setItem('braincode_patch_history', JSON.stringify(patchHistory));
+    }
+
+    // === SANITIZATION ===
+    function sanitizeCode(code) {
+        var cleaned = code;
+        cleaned = cleaned.replace(/\s{3,}/g, ' ');
+        cleaned = cleaned.replace(/\r\n/g, '\n');
+        cleaned = cleaned.replace(/<!--\s*SECTION:/gi, '<!-- SECTION:');
+        cleaned = cleaned.replace(/<!--\s*\/SECTION:/gi, '<!-- /SECTION:');
+        return cleaned;
+    }
+
+    // === EXTRACTION JSON ROBUSTE ===
+    function extractJSON(text) {
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            var match = text.match(/(\{[\s\S]*\})/);
+            if (match) {
+                try {
+                    return JSON.parse(match[1]);
+                } catch (e2) {
+                    throw new Error('Impossible d\'extraire le JSON: ' + e2.message);
+                }
+            }
+            throw new Error('Aucun JSON trouvé dans la réponse');
+        }
+    }
+
     // === BALISAGE HTML ===
     function autoTagCode(code) {
-        log('🏷️ Balisage HTML (propre)...', 'tag');
+        log('🏷️ Balisage HTML (sanitized)...', 'tag');
 
-        var styleRegex = /<style[\s\S]*?<\/style>/g;
+        var cleanCode = sanitizeCode(code);
+
+        var styleRegex = /<style[^>]*>[\s\S]*?<\/style>/gi;
         var styleBlocks = [];
         var match;
-        var tempCode = code;
+        var tempCode = cleanCode;
         var styleIndex = 0;
 
         while ((match = styleRegex.exec(tempCode)) !== null) {
@@ -392,7 +753,7 @@
             styleIndex++;
         }
 
-        var scriptRegex = /<script(?![^>]*type="text\/babel")[\s\S]*?<\/script>/g;
+        var scriptRegex = /<script[^>]*>[\s\S]*?<\/script>/gi;
         var scriptBlocks = [];
         while ((match = scriptRegex.exec(tempCode)) !== null) {
             var placeholder2 = '__SCRIPT_PLACEHOLDER_' + scriptBlocks.length + '__';
@@ -400,7 +761,7 @@
             tempCode = tempCode.replace(match[0], placeholder2);
         }
 
-        var idRegex = /<(div|section|button|canvas|input|app-container|image-wrapper|result-area)[^>]*id="([^"]+)"[^>]*>/gi;
+        var idRegex = /<(div|section|button|canvas|input|app-container|image-wrapper|result-area|header|main|nav|form)[^>]*id="([^"]+)"[^>]*>/gi;
         var idBlocks = [];
         while ((match = idRegex.exec(tempCode)) !== null) {
             var idName = match[2];
@@ -413,14 +774,13 @@
             }
         }
 
-        var jsRegex = /(const|function)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[=({]/g;
+        var jsRegex = /(const|function|class|export)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[=({]/g;
         var jsBlocks = [];
         while ((match = jsRegex.exec(tempCode)) !== null) {
             var name = match[2];
             var startIdx = match.index;
             var braceCount = 0;
             var i = startIdx;
-            var found = false;
             while (i < tempCode.length) {
                 if (tempCode[i] === '{') braceCount++;
                 else if (tempCode[i] === '}') {
@@ -430,24 +790,12 @@
                         if (!jsBlocks.some(function(b) { return b.name === name; })) {
                             jsBlocks.push({ name: name, content: fullBlock });
                         }
-                        found = true;
                         break;
                     }
                 }
                 i++;
             }
         }
-
-        var allSections = [];
-        styleBlocks.forEach(function(block) {
-            allSections.push({ name: block.name, content: block.content, placeholder: block.placeholder });
-        });
-        idBlocks.forEach(function(block) {
-            allSections.push({ name: block.name, content: block.content });
-        });
-        jsBlocks.forEach(function(block) {
-            allSections.push({ name: block.name, content: block.content });
-        });
 
         var finalCode = tempCode;
         var added = [];
@@ -474,19 +822,22 @@
             finalCode = finalCode.replace(block.placeholder, block.content);
         });
 
+        finalCode = sanitizeCode(finalCode);
+
         var newMapping = {};
         extractSections(finalCode).forEach(function(s) {
             newMapping[s.name] = { originalName: s.name, type: 'auto-detected', timestamp: new Date().toISOString() };
         });
         sectionMapping = newMapping;
 
-        log('🏷️ ' + added.length + ' sections balisées (HTML propre)', 'success');
+        log('🏷️ ' + added.length + ' sections balisées (sanitized)', 'success');
         return { code: finalCode, added: added };
     }
 
     function applyAutoTag() {
         var code = fullCodeInput.value.trim();
         if (!code) { alert('📄 Colle du code !'); return; }
+        pushUndo(fullCode);
         var result = autoTagCode(code);
         if (result) {
             fullCode = result.code;
@@ -501,7 +852,53 @@
         }
     }
 
-    // === ENVOI DE REQUÊTE ===
+    // === CONFIGURATION PROVIDER ===
+    function getProviderConfig() {
+        var provider = providerSelect.value;
+        var configs = {
+            deepseek: {
+                url: 'https://api.deepseek.com/v1/chat/completions',
+                model: 'deepseek-v4-flash',
+                authPrefix: 'Bearer ',
+                stream: true
+            },
+            openai: {
+                url: 'https://api.openai.com/v1/chat/completions',
+                model: 'gpt-4o-mini',
+                authPrefix: 'Bearer ',
+                stream: true
+            },
+            anthropic: {
+                url: 'https://api.anthropic.com/v1/messages',
+                model: 'claude-3-5-sonnet-20241022',
+                authPrefix: 'x-api-key: ',
+                stream: false
+            }
+        };
+        return configs[provider] || configs.deepseek;
+    }
+
+    // === STREAMING ===
+    function updateProgress(progress) {
+        progressBar.style.width = Math.min(progress, 100) + '%';
+    }
+
+    function resetProgress() {
+        progressBar.style.width = '0%';
+    }
+
+    function streamDisplayAppend(text) {
+        streamDisplay.classList.remove('hidden');
+        streamDisplay.textContent += text;
+        streamDisplay.scrollTop = streamDisplay.scrollHeight;
+    }
+
+    function streamDisplayClear() {
+        streamDisplay.textContent = '';
+        streamDisplay.classList.add('hidden');
+    }
+
+    // === ENVOI DE REQUÊTE AVEC STREAMING ===
     async function sendRequest(instruction) {
         var apiKey = localStorage.getItem('braincode_api_key');
         if (!apiKey) { log('❌ Aucune clé API', 'error'); alert('⚠️ Sauvegarde ta clé API.'); return false; }
@@ -512,6 +909,7 @@
 
         if (!hasTags(code)) {
             log('⚠️ Code non balisé. Balisage auto...', 'warning');
+            pushUndo(fullCode);
             var result = autoTagCode(code);
             if (result) {
                 code = result.code;
@@ -529,35 +927,115 @@
         log('📤 Envoi: "' + instruction.substring(0, 50) + '..." (' + sections.length + ' sections)', 'info');
 
         patchesContainer.innerHTML = '<div class="text-white/40 italic text-sm animate-pulse">⏳ Envoi en cours...</div>';
+        resetProgress();
+        streamDisplayClear();
+
+        var config = getProviderConfig();
+
+        var body;
+        if (providerSelect.value === 'anthropic') {
+            body = {
+                model: config.model,
+                max_tokens: 4096,
+                messages: [{
+                    role: 'user',
+                    content: 'Code:\n' + code + '\n\nInstruction: ' + instruction
+                }],
+                system: 'Tu es un expert en React/HTML. Voici le code source avec des sections balisées (<!-- SECTION: nom --> ... <!-- /SECTION: nom -->). Sections: ' + sectionsNames + '.\n\nRÈGLES IMPORTANTES :\n1. Pour modifier une section, tu DOIS renvoyer le contenu COMPLET de la section dans "newContent".\n2. Ne renvoie JAMAIS "newContent" vide.\n3. Pour une section "style", tu dois renvoyer tout le bloc <style>...</style> avec les modifications.\n4. Réponds UNIQUEMENT avec un JSON valide : {"patches": [{"section": "nom", "newContent": "contenu_complet"}]}'
+            };
+        } else {
+            body = {
+                model: config.model,
+                messages: [{
+                    role: 'system',
+                    content: 'Tu es un expert en React/HTML. Voici le code source avec des sections balisées (<!-- SECTION: nom --> ... <!-- /SECTION: nom -->). Sections: ' + sectionsNames + '.\n\nRÈGLES IMPORTANTES :\n1. Pour modifier une section, tu DOIS renvoyer le contenu COMPLET de la section dans "newContent".\n2. Ne renvoie JAMAIS "newContent" vide.\n3. Pour une section "style", tu dois renvoyer tout le bloc <style>...</style> avec les modifications.\n4. Réponds UNIQUEMENT avec un JSON valide : {"patches": [{"section": "nom", "newContent": "contenu_complet"}]}'
+                }, {
+                    role: 'user',
+                    content: 'Code:\n' + code + '\n\nInstruction: ' + instruction
+                }],
+                stream: config.stream || false
+            };
+        }
 
         try {
-            var response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            var response = await fetch(config.url, {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + apiKey,
+                    'Authorization': config.authPrefix + apiKey,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    model: 'deepseek-v4-flash',
-                    messages: [{
-                        role: 'system',
-                        content: 'Tu es un expert en React/HTML. Voici le code source avec des sections balisées (<!-- SECTION: nom --> ... <!-- /SECTION: nom -->). Sections: ' + sectionsNames + '.\n\nRÈGLES IMPORTANTES :\n1. Pour modifier une section, tu DOIS renvoyer le contenu COMPLET de la section dans "newContent".\n2. Ne renvoie JAMAIS "newContent" vide.\n3. Pour une section "style", tu dois renvoyer tout le bloc <style>...</style> avec les modifications.\n4. Réponds UNIQUEMENT avec un JSON valide : {"patches": [{"section": "nom", "newContent": "contenu_complet"}]}'
-                    }, {
-                        role: 'user',
-                        content: 'Code:\n' + code + '\n\nInstruction: ' + instruction
-                    }],
-                    stream: false
-                })
+                body: JSON.stringify(body)
             });
 
             if (!response.ok) throw new Error('HTTP ' + response.status);
 
-            var data = await response.json();
-            var responseText = data.choices[0].message.content;
-            var jsonMatch = responseText.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) throw new Error('Aucun JSON trouvé');
+            var responseText;
 
-            var patchesData = JSON.parse(jsonMatch[0]);
+            if (config.stream && response.body) {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+                let progress = 0;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+
+                            try {
+                                const parsed = JSON.parse(data);
+                                const delta = parsed.choices?.[0]?.delta?.content;
+                                if (delta) {
+                                    fullResponse += delta;
+                                    streamDisplayAppend(delta);
+                                    progress = Math.min(progress + 0.5, 90);
+                                    updateProgress(progress);
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+
+                updateProgress(100);
+                responseText = fullResponse;
+
+            } else {
+                var data = await response.json();
+                if (providerSelect.value === 'anthropic') {
+                    responseText = data.content[0].text;
+                } else {
+                    responseText = data.choices[0].message.content;
+                }
+
+                streamDisplay.classList.remove('hidden');
+                for (var i = 0; i < responseText.length; i++) {
+                    streamDisplay.textContent += responseText[i];
+                    if (i % 5 === 0) {
+                        updateProgress((i / responseText.length) * 100);
+                    }
+                    await new Promise(r => setTimeout(r, 1));
+                }
+                updateProgress(100);
+            }
+
+            log('📥 Réponse reçue (' + responseText.length + ' caractères)', 'info');
+
+            var patchesData;
+            try {
+                patchesData = extractJSON(responseText);
+            } catch (err) {
+                log('❌ Erreur extraction JSON: ' + err.message, 'error');
+                patchesContainer.innerHTML = '<div class="text-red-400/80 text-sm">❌ ' + err.message + '</div>';
+                return false;
+            }
+
             var patches = patchesData.patches || [];
             if (patches.length === 0) {
                 patchesContainer.innerHTML = '<div class="text-yellow-400/80 text-sm">⚠️ Aucun patch généré.</div>';
@@ -570,14 +1048,16 @@
             var html = '<div class="space-y-2">';
             html += '<div class="flex items-center justify-between">';
             html += '<span class="text-sm text-green-400">✅ ' + patches.length + ' patch(s) : ' + patches.map(function(p) { return p.section; }).join(', ') + '</span>';
+            html += '<div class="flex gap-2">';
             html += '<button id="applyAllBtn" class="bg-blue-600/30 hover:bg-blue-600/50 active:scale-95 transition-app px-3 py-1 rounded-xl text-xs text-blue-300 border border-blue-500/20">Tout appliquer</button>';
-            html += '</div>';
+            html += '</div></div>';
             patches.forEach(function(patch, idx) {
                 html += '<div class="flex items-center justify-between bg-white/5 p-2 rounded-xl border border-white/5">';
                 html += '<span class="text-xs font-mono text-cyan-400">📌 ' + patch.section + '</span>';
-                html += '<div class="flex gap-2">';
-                html += '<button class="previewPatchBtn bg-white/5 hover:bg-white/10 active:scale-95 transition-app px-2 py-1 rounded-lg text-xs text-white/50" data-index="' + idx + '">👁️</button>';
-                html += '<button class="applyPatchBtn bg-blue-600/20 hover:bg-blue-600/40 active:scale-95 transition-app px-2 py-1 rounded-lg text-xs text-blue-300" data-index="' + idx + '">🔧 Appliquer</button>';
+                html += '<div class="flex gap-1">';
+                html += '<button class="explainPatchBtn bg-purple-600/20 hover:bg-purple-600/40 active:scale-95 transition-app px-2 py-1 rounded-lg text-xs text-purple-300" data-section="' + patch.section + '">📖</button>';
+                html += '<button class="diffPreviewBtn bg-white/5 hover:bg-white/10 active:scale-95 transition-app px-2 py-1 rounded-lg text-xs text-white/50" data-index="' + idx + '">👁️</button>';
+                html += '<button class="applyPatchBtn bg-blue-600/20 hover:bg-blue-600/40 active:scale-95 transition-app px-2 py-1 rounded-lg text-xs text-blue-300" data-index="' + idx + '">🔧</button>';
                 html += '</div></div>';
             });
             if (patchesData.explanation) {
@@ -587,22 +1067,36 @@
             patchesContainer.innerHTML = html;
             patchTimestamp.textContent = new Date().toLocaleTimeString();
 
+            document.querySelectorAll('.explainPatchBtn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var sectionName = this.dataset.section;
+                    explainSection(sectionName);
+                });
+            });
+
+            document.querySelectorAll('.diffPreviewBtn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var idx = parseInt(this.dataset.index);
+                    var patch = patches[idx];
+                    var section = patch.section;
+                    var regex = new RegExp('<!--\\s*SECTION:\\s*' + escapeRegex(section) + '\\s*-->([\\s\\S]*?)<!--\\s*\\/SECTION:\\s*' + escapeRegex(section) + '\\s*-->', 'gi');
+                    var match = regex.exec(fullCode);
+                    var oldContent = match ? match[1] : '(section non trouvée)';
+                    showDiff(oldContent, patch.newContent || '(suppression)', patch, instruction);
+                });
+            });
+
             document.querySelectorAll('.applyPatchBtn').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     var idx = parseInt(this.dataset.index);
                     var patch = patches[idx];
-                    applyPatch(patch, instruction);
-                    this.textContent = '✅ Appliqué';
-                    this.disabled = true;
-                    this.className = 'bg-green-500/20 text-green-400 px-2 py-1 rounded-lg text-xs';
-                });
-            });
-
-            document.querySelectorAll('.previewPatchBtn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var idx = parseInt(this.dataset.index);
-                    var patch = patches[idx];
-                    alert('📌 Section: ' + patch.section + '\n\n' + (patch.newContent || '⚠️ Suppression'));
+                    var result = applyPatch(patch, instruction);
+                    if (result) {
+                        this.textContent = '✅';
+                        this.disabled = true;
+                        this.className = 'bg-green-500/20 text-green-400 px-2 py-1 rounded-lg text-xs';
+                        log('✅ Patch "' + patch.section + '" appliqué', 'success');
+                    }
                 });
             });
 
@@ -613,7 +1107,7 @@
                 this.textContent = '✅ Appliqué';
                 this.disabled = true;
                 document.querySelectorAll('.applyPatchBtn').forEach(function(b) {
-                    b.textContent = '✅ Appliqué';
+                    b.textContent = '✅';
                     b.disabled = true;
                     b.className = 'bg-green-500/20 text-green-400 px-2 py-1 rounded-lg text-xs';
                 });
@@ -737,6 +1231,46 @@
         applyAutoTag();
     });
 
+    // === KEYBOARD SHORTCUTS ===
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            var instruction = instructionsInput.value.trim();
+            if (instruction) {
+                sendBtn.disabled = true;
+                sendBtn.innerHTML = '⏳ Patcher...';
+                sendRequest(instruction).then(function() {
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = '🚀 Patcher';
+                });
+            }
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+            e.preventDefault();
+            applyAutoTag();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+            e.preventDefault();
+            var previous = popUndo();
+            if (previous) {
+                fullCode = previous;
+                fullCodeInput.value = previous;
+                updateFinalCodeDisplay();
+                updateCodeStats();
+                updateTagStatus();
+                updateSandbox();
+                log('↺ Retour à la version précédente', 'success');
+            }
+        }
+        // Échap pour quitter le plein écran
+        if (e.key === 'Escape' && isFullscreen) {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+        }
+    });
+
+    // === EXEMPLE ===
     loadExampleBtn.addEventListener('click', function() {
         var example = '<!DOCTYPE html>\n<html>\n<head>\n<title>Pipette</title>\n<style>\nbody { background: #0f0f12; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }\n.app { background: #1a1a24; padding: 30px; border-radius: 16px; text-align: center; }\nbutton { background: #3b82f6; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; }\n<\/style>\n<\/head>\n<body>\n<div class="app">\n<h1 class="text-white">🎨 Braincode</h1>\n<p class="text-white/50">Charge une image et sélectionne des couleurs</p>\n<button onclick="alert(\'Coucou !\')">Clique-moi</button>\n</div>\n</body>\n</html>';
         fullCodeInput.value = example;
@@ -749,15 +1283,18 @@
         patchesContainer.innerHTML = '<div class="text-white/40 italic text-sm">✅ Exemple chargé.</div>';
     });
 
+    // === RESET ===
     resetCodeBtn.addEventListener('click', function() {
         if (confirm('🗑️ Réinitialiser tout ?')) {
             fullCode = '';
             fullCodeInput.value = '';
             sectionMapping = {};
             patchHistory = [];
+            undoStack = [];
             localStorage.removeItem('braincode_full_code');
             localStorage.removeItem('braincode_section_mapping');
             localStorage.removeItem('braincode_patch_history');
+            localStorage.removeItem('braincode_undo_stack');
             updateFinalCodeDisplay();
             updateCodeStats();
             patchesContainer.innerHTML = '<div class="text-white/40 italic text-sm">🧹 Tout réinitialisé</div>';
@@ -765,9 +1302,11 @@
             tagStatus.className = 'text-[10px] text-white/30';
             log('🧹 Tout réinitialisé', 'info');
             updateSandbox();
+            updateUndoButton();
         }
     });
 
+    // === COPIER / EXPORTER ===
     copyFinalBtn.addEventListener('click', function() {
         navigator.clipboard.writeText(fullCode).then(function() {
             var orig = copyFinalBtn.textContent;
@@ -788,13 +1327,27 @@
         log('⬇️ Code exporté', 'success');
     });
 
+    // === UNDO BUTTON ===
+    undoBtn.addEventListener('click', function() {
+        var previous = popUndo();
+        if (previous) {
+            fullCode = previous;
+            fullCodeInput.value = previous;
+            updateFinalCodeDisplay();
+            updateCodeStats();
+            updateTagStatus();
+            updateSandbox();
+            log('↺ Retour à la version précédente', 'success');
+        }
+    });
+
     // === INIT ===
     loadKey();
     loadFullCode();
     updateCodeStats();
     updateTagStatus();
     updateSandbox();
-    log('🧠 Braincode v1.0 prêt !', 'success');
+    log('🧠 Braincode v1.2.2 prêt ! (Plein écran + Signature)', 'success');
     if (fullCode) {
         patchesContainer.innerHTML = hasTags(fullCode) ?
             '<div class="text-white/40 italic text-sm">✅ Code balisé. Envoie une instruction.</div>' :
